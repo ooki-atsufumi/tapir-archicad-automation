@@ -35,6 +35,7 @@
 #include "MigrationHelper.hpp"
 #include "NavigatorCommands.hpp"
 #include "DocumentCreationCommands.hpp"
+#include "ViewCreationCommands.hpp"
 #include "RevisionCommands.hpp"
 #include "NotificationCommands.hpp"
 #include "DesignOptionCommands.hpp"
@@ -42,6 +43,7 @@
 #include "SolidElementOperationCommands.hpp"
 #include "MEPCommands.hpp"
 #include "KeynoteCommands.hpp"
+#include "GraphicalOverrideCommands.hpp"
 
 template <typename CommandType>
 GSErrCode RegisterCommand (CommandGroup& group, const GS::UniString& version, const GS::UniString& description)
@@ -577,6 +579,25 @@ GSErrCode Initialize (void)
         AddCommandGroup (elementCommands);
     }
 
+    { // MEP Commands
+
+    { // Graphical Override Commands
+        CommandGroup graphicalOverrideCommands ("Graphical Override Commands");
+        err |= RegisterCommand<CreateGraphicalOverrideRuleCommand> (
+            graphicalOverrideCommands, "1.5.0",
+            "Creates or overwrites a graphical override rule (name, rule group, optional criterion XML, surface RGB, line pen)."
+        );
+        err |= RegisterCommand<GetGraphicalOverrideRulesCommand> (
+            graphicalOverrideCommands, "1.5.0",
+            "Gets all graphical override rules with their criterion XMLs."
+        );
+        err |= RegisterCommand<CreateGraphicalOverrideCombinationCommand> (
+            graphicalOverrideCommands, "1.5.0",
+            "Creates or updates a graphical override combination from a list of rule names."
+        );
+        AddCommandGroup (graphicalOverrideCommands);
+    }
+
     { // Element grouping Commands
         CommandGroup elementGroupingCommands ("Element grouping Commands");
         err |= RegisterCommand<CreateGroupsCommand> (
@@ -781,6 +802,14 @@ GSErrCode Initialize (void)
             attributeCommands, "1.2.2",
             "Creates or overwrites Surface attributes based on the given parameters."
         );
+        err |= RegisterCommand<CreateMEPSystemsCommand> (
+            attributeCommands, "1.0.0",
+            "Creates or overwrites MEP System attributes (domain, pens and body material) for per-system color coding."
+        );
+        err |= RegisterCommand<GetPensCommand> (
+            attributeCommands, "1.0.0",
+            "Returns the index and RGB of every pen in the active pen set."
+        );
         err |= RegisterCommand<GetBuildingMaterialPhysicalPropertiesCommand> (
             attributeCommands, "0.1.3",
             "Retrieves the physical properties of the given Building Materials."
@@ -959,6 +988,10 @@ GSErrCode Initialize (void)
         err |= RegisterCommand<GetLayoutCustomSchemeCommand> (
             navigatorCommands, "1.1.7",
             "Gets the Layout Info Panel custom field definitions (name and key) from Book Settings."
+        );
+        err |= RegisterCommand<CreateViewsFromStoriesCommand> (
+            navigatorCommands, "1.5.0",
+            "Creates View Map views by cloning story viewpoints, with layer combination and scale."
         );
         err |= RegisterCommand<GetModelViewOptionsCommand> (
             navigatorCommands, "1.1.4",
@@ -1224,6 +1257,14 @@ GSErrCode Initialize (void)
         err |= RegisterCommand<GetMEPPreferenceTablesCommand> (
             mepCommands, "1.5.7",
             "Gets the circular cross section preference tables (referenceId, diameter, description) of the Piping or Ventilation domain. Available from Archicad 28."
+        );
+        err |= RegisterCommand<CreateMEPRoutesCommand> (
+            mepCommands, "1.5.0",
+            "Creates MEP routing elements (pipes, ducts, cable carriers) from 3D node coordinates. Slope is expressed by the z values of the nodes."
+        );
+        err |= RegisterCommand<SetElementsLayerCommand> (
+            mepCommands, "1.5.0",
+            "Sets the layer of the given elements via classic API (works for MEP sub-elements)."
         );
         AddCommandGroup (mepCommands);
     }

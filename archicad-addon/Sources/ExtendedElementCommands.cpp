@@ -3648,10 +3648,12 @@ GS::Optional<GS::ObjectState> CreateBeamsCommand::SetTypeSpecificParameters (API
     auto arcAngle = GetOptionalDouble (parameters, "arcAngle");
     if (arcAngle.HasValue ()) {
         element.beam.curveAngle = arcAngle.Get ();
+        element.beam.beamShape = API_HorizontallyCurvedBeam;
     }
     auto curveHeight = GetOptionalDouble (parameters, "verticalCurveHeight");
     if (curveHeight.HasValue ()) {
         element.beam.verticalCurveHeight = curveHeight.Get ();
+        element.beam.beamShape = API_VerticallyCurvedBeam;
     }
 
     GS::UniString anchorPoint;
@@ -3686,6 +3688,19 @@ GS::Optional<GS::ObjectState> CreateBeamsCommand::SetTypeSpecificParameters (API
                 segment.modelElemStructureType = API_BasicStructure;
                 segment.buildingMaterial = GetAttributeIndexFromGuid (API_BuildingMaterialID, GetGuidFromObjectState (*buildingMaterialIdOs));
             }
+        }
+    }
+
+    auto buildingMaterialId = GetOptionalObjectState (parameters, "buildingMaterialId");
+    if (buildingMaterialId.HasValue () && memo.beamSegments != nullptr) {
+        API_AttributeIndex buildingMaterialIndex = APIInvalidAttributeIndex;
+        if (!ResolveAttributeIndex (buildingMaterialId.Get (), API_BuildingMaterialID, buildingMaterialIndex)) {
+            return CreateErrorResponse (APIERR_BADPARS, "Invalid beam building material.");
+        }
+        GSSize nSegments = BMGetPtrSize (reinterpret_cast<GSPtr>(memo.beamSegments)) / sizeof (API_BeamSegmentType);
+        for (GSSize i = 0; i < nSegments; ++i) {
+            memo.beamSegments[i].assemblySegmentData.modelElemStructureType = API_BasicStructure;
+            memo.beamSegments[i].assemblySegmentData.buildingMaterial = buildingMaterialIndex;
         }
     }
 
