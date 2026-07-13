@@ -1,5 +1,6 @@
 #include "ProjectCommands.hpp"
 #include "MigrationHelper.hpp"
+#include "Location.hpp"
 
 #include <cmath>
 
@@ -1361,8 +1362,21 @@ GS::Optional<GS::UniString> SaveProjectCommand::GetRawResponseSchema () const
     })";
 }
 
-GS::ObjectState SaveProjectCommand::Execute (const GS::ObjectState& /*parameters*/, GS::ProcessControl& /*processControl*/) const
+GS::ObjectState SaveProjectCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
 {
+    GS::UniString projectPath;
+    if (parameters.Get ("projectPath", projectPath) && !projectPath.IsEmpty ()) {
+        IO::Location fileLoc (projectPath);
+        API_FileSavePars fsp = {};
+        fsp.fileTypeID = APIFType_PlanFile;
+        fsp.file = &fileLoc;
+        GSErrCode err = ACAPI_ProjectOperation_Save (&fsp);
+        if (err != NoError) {
+            return CreateFailedExecutionResult (err, "Failed to save the project to the given path.");
+        }
+        return CreateSuccessfulExecutionResult ();
+    }
+
     // The parameterless save acts on the current window - "saves the content of
     // the current window", ACAPI_Automate.h - so from a 3D, section or other
     // non-plan window it tries to save that window's content, which has no file
