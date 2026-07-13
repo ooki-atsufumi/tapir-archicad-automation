@@ -4086,6 +4086,10 @@ GS::Optional<GS::UniString> CreateMEPSystemsCommand::GetInputParametersSchema ()
                         "centerLineTypeId": {
                             "description": "Identifier of the center line type attribute.",
                             "$ref": "#/AttributeIdArrayItem"
+                        },
+                        "materialIndex": {
+                            "type": "integer",
+                            "description": "Index of the surface (material) attribute used for the 3D body color of elements assigned to this MEP System."
                         }
                     },
                     "additionalProperties": false,
@@ -4149,6 +4153,11 @@ void CreateMEPSystemsCommand::SetTypeSpecificParameters (const GS::ObjectState& 
         if (GetAttributeIndexFromAttributeId (centerLineTypeId, API_LinetypeID, lineTypeIndex)) {
             attribute.mepSystem.centerLTypeInd = lineTypeIndex;
         }
+    }
+
+    Int32 materialIndex = 0;
+    if (parameters.Get ("materialIndex", materialIndex) && materialIndex > 0) {
+        attribute.mepSystem.materialInd = ACAPI_CreateAttributeIndex (materialIndex);
     }
 }
 
@@ -5197,6 +5206,69 @@ GS::ObjectState CreateProfilesCommand::Execute (const GS::ObjectState& parameter
             ACAPI_DisposeAttrDefsHdlsExt (&sourceDefs);
         }
     }
+
+    return response;
+}
+
+GetPensCommand::GetPensCommand () :
+    CommandBase (CommonSchema::NotUsed)
+{
+}
+
+GS::String GetPensCommand::GetName () const
+{
+    return "GetPens";
+}
+
+GS::Optional<GS::UniString> GetPensCommand::GetResponseSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "pens": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "index": { "type": "integer" },
+                        "red": { "type": "number" },
+                        "green": { "type": "number" },
+                        "blue": { "type": "number" }
+                    },
+                    "additionalProperties": false,
+                    "required": ["index", "red", "green", "blue"]
+                }
+            }
+        },
+        "additionalProperties": false,
+        "required": ["pens"]
+    })";
+}
+
+GS::ObjectState GetPensCommand::Execute (const GS::ObjectState& /*parameters*/, GS::ProcessControl& /*processControl*/) const
+{
+    GS::ObjectState response;
+    const auto& pens = response.AddList<GS::ObjectState> ("pens");
+
+    UInt32 count = 0;
+    if (ACAPI_Attribute_GetPenNum (count) != NoError) {
+        return CreateErrorResponse (APIERR_GENERAL, "Failed to get the number of pens.");
+    }
+    for (short i = 1; i <= static_cast<short> (count); ++i) {
+        API_Pen pen = {};
+        pen.index = i;
+        if (ACAPI_Attribute_GetPen (pen) != NoError) {
+            continue;
+        }
+        GS::ObjectState penOS;
+        penOS.Add ("index", static_cast<Int32> (pen.index));
+        penOS.Add ("red", pen.rgb.f_red);
+        penOS.Add ("green", pen.rgb.f_green);
+        penOS.Add ("blue", pen.rgb.f_blue);
+        pens (penOS);
+    }
+    return response;
+}
 
     return response;
 }

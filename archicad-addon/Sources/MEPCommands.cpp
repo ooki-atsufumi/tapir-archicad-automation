@@ -23,6 +23,12 @@
 #include "ACAPI/MEPDuctCircularSegmentPreferenceTable.hpp"
 #include "ACAPI/MEPDuctSegmentPreferenceTableContainer.hpp"
 
+#include "ACAPI/MEPUniqueID.hpp"
+#include "ACAPI/MEPPipeSegmentPreferenceTable.hpp"
+#include "ACAPI/MEPPipeSegmentPreferenceTableContainer.hpp"
+#include "ACAPI/MEPDuctCircularSegmentPreferenceTable.hpp"
+#include "ACAPI/MEPDuctSegmentPreferenceTableContainer.hpp"
+#include <cmath>
 #include <optional>
 
 using namespace ACAPI::MEP;
@@ -1217,6 +1223,520 @@ GS::ObjectState ConnectMEPElementsCommand::Execute (const GS::ObjectState& param
     UNUSED_PARAMETER (parameters);
     return CreateErrorResponse (APIERR_NOTSUPPORTED, "This command requires Archicad 28 or newer.");
 #endif
+}
+
+#ifdef ServerMainVers_2800
+static bool ScanTableForDiameter (const TableT& table, double diameter, double& bestDiff, UInt32& outReferenceId)
+{
+    bool found = false;
+    const uint32_t size = table.GetSize ();
+    for (uint32_t i = 0; i < size; ++i) {
+        auto rowDiameter = table.GetDiameter (i);
+        auto rowReferenceId = table.GetReferenceId (i);
+        if (rowDiameter.IsErr () || rowReferenceId.IsErr ()) {
+            continue;
+        }
+        const double diff = std::fabs (*rowDiameter - diameter);
+        if (diff < bestDiff) {
+            bestDiff = diff;
+            outReferenceId = *rowReferenceId;
+            found = true;
+        }
+    }
+    return found;
+}
+
+// レイヤ属性を名前で解決する。
+static bool FindLayerIndexByName (const GS::UniString& layerName, API_AttributeIndex& outIndex)
+{
+    GS::Array<API_Attribute> attrs;
+    if (ACAPI_Attribute_GetAttributesByType (API_LayerID, attrs) != NoError) {
+        return false;
+    }
+    for (const API_Attribute& attr : attrs) {
+        if (GS::UniString (attr.header.name) == layerName) {
+            outIndex = attr.header.index;
+            return true;
+        }
+    }
+    return false;
+}
+
+// MEP要素のレイヤを classic API で変更する(MEP APIにはレイヤ操作が無い)。
+static GSErrCode SetLayerOfElement (const API_Guid& elemGuid, const API_AttributeIndex& layerIndex)
+{
+    API_Element element = {};
+    element.header.guid = elemGuid;
+    GSErrCode err = ACAPI_Element_Get (&element);
+    if (err != NoError) {
+        return err;
+    }
+    API_Element mask = {};
+    ACAPI_ELEMENT_MASK_CLEAR (mask);
+    ACAPI_ELEMENT_MASK_SET (mask, API_Elem_Head, layer);
+    element.header.layer = layerIndex;
+    return ACAPI_Element_Change (&element, &mask, nullptr, 0, true);
+}
+
+// ルーティング要素本体とサブ要素(剛管・エルボ・継手)のレイヤを一括変更する。
+// コンテナ本体への Element_Change は効かないことがあるため、ジオメトリを持つサブ要素にも適用する。
+static void SetLayerOfRoute (const UniqueID& routeId, const API_AttributeIndex& layerIndex)
+{
+    GSErrCode err = ACAPI_CallUndoableCommand ("Set MEP route layer", [&] () -> GSErrCode {
+        SetLayerOfElement (GSGuid2APIGuid (routeId.GetGuid ()), layerIndex);
+        auto route = RoutingElement::Get (routeId);
+        if (route.IsErr ()) {
+            return NoError;
+        }
+        for (const UniqueID& segId : route->GetRoutingSegmentIds ()) {
+            SetLayerOfElement (GSGuid2APIGuid (segId.GetGuid ()), layerIndex);
+            auto segment = RoutingSegment::Get (segId);
+            if (segment.IsOk ()) {
+                for (const UniqueID& rigidId : segment->GetRigidSegmentIds ()) {
+                    SetLayerOfElement (GSGuid2APIGuid (rigidId.GetGuid ()), layerIndex);
+                }
+            }
+        }
+        for (const UniqueID& nodeId : route->GetRoutingNodeIds ()) {
+            SetLayerOfElement (GSGuid2APIGuid (nodeId.GetGuid ()), layerIndex);
+            auto routingNode = RoutingNode::Get (nodeId);
+            if (routingNode.IsOk ()) {
+                for (const UniqueID& elbowId : routingNode->GetElbowIds ()) {
+                    SetLayerOfElement (GSGuid2APIGuid (elbowId.GetGuid ()), layerIndex);
+                }
+                for (const UniqueID& transitionId : routingNode->GetTransitionIds ()) {
+                    SetLayerOfElement (GSGuid2APIGuid (transitionId.GetGuid ()), layerIndex);
+                }
+            }
+        }
+        return NoError;
+    });
+    (void) err;
+}
+
+// MEPシステム属性(排水/給水/暖房など)を名前で解決する。完全一致優先、次に部分一致。
+static bool FindMEPSystemIndexByName (const GS::UniString& systemName, API_AttributeIndex& outIndex)
+{
+    GS::Array<API_Attribute> attrs;
+    if (ACAPI_Attribute_GetAttributesByType (API_MEPSystemID, attrs) != NoError) {
+        return false;
+    }
+    for (const API_Attribute& attr : attrs) {
+        if (GS::UniString (attr.header.name) == systemName) {
+            outIndex = attr.header.index;
+            return true;
+        }
+    }
+    for (const API_Attribute& attr : attrs) {
+        if (GS::UniString (attr.header.name).Contains (systemName)) {
+            outIndex = attr.header.index;
+            return true;
+        }
+    }
+    return false;
+}
+
+// Finds the preference table row closest to the requested diameter. The referenceId is only
+// meaningful within the RoutingSegmentDefault's assigned table, so if the best row comes from
+// another table of the domain container, that table is assigned to the segment default first.
+static bool ResolveCircularReferenceId (Domain domain, RoutingElementDefault& routingElementDefault, double diameter, UInt32& outReferenceId)
+{
+    std::vector<UniqueID> tableIds;
+    tableIds.push_back (routingElementDefault.GetRoutingSegmentDefault ().GetPreferenceTableId ());
+
+    if (domain == Domain::Piping) {
+        auto container = GetPipeSegmentPreferenceTableContainer ();
+        if (container.IsOk ()) {
+            for (const UniqueID& id : container->GetPreferenceTables ()) {
+                tableIds.push_back (id);
+            }
+        }
+    } else if (domain == Domain::Ventilation) {
+        auto container = GetDuctSegmentPreferenceTableContainer ();
+        if (container.IsOk ()) {
+            for (const UniqueID& id : container->GetPreferenceTables ()) {
+                tableIds.push_back (id);
+            }
+        }
+    } else {
+        return false;
+    }
+
+    double bestDiff = 1e12;
+    UInt32 bestReferenceId = 0;
+    size_t bestTableIndex = 0;
+    bool found = false;
+
+    for (size_t tableIndex = 0; tableIndex < tableIds.size (); ++tableIndex) {
+        double tableBestDiff = bestDiff;
+        UInt32 referenceId = 0;
+        bool foundInTable = false;
+
+        if (domain == Domain::Piping) {
+            auto table = PipeSegmentPreferenceTable::Get (tableIds[tableIndex]);
+            if (table.IsOk ()) {
+                foundInTable = ScanTableForDiameter (*table, diameter, tableBestDiff, referenceId);
+            }
+        } else {
+            auto table = DuctCircularSegmentPreferenceTable::Get (tableIds[tableIndex]);
+            if (table.IsOk ()) {
+                foundInTable = ScanTableForDiameter (*table, diameter, tableBestDiff, referenceId);
+            }
+        }
+
+        if (foundInTable && tableBestDiff < bestDiff) {
+            bestDiff = tableBestDiff;
+            bestReferenceId = referenceId;
+            bestTableIndex = tableIndex;
+            found = true;
+        }
+    }
+
+    if (!found) {
+        return false;
+    }
+
+    // ツール既定が別システム(暖房DN25等)のままでも確実に効くよう、断面形状・テーブル・行を
+    // セグメント既定値に直接書き込む(Placeの断面マップと二重で適用)
+    RoutingSegmentDefault segmentDefault = routingElementDefault.GetRoutingSegmentDefault ();
+    const UniqueID tableId = tableIds[bestTableIndex];
+    const UInt32 referenceId = bestReferenceId;
+    auto modifyResult = segmentDefault.Modify ([&] (RoutingSegmentDefault::Modifier& modifier) -> ACAPI::Result<void> {
+        auto shapeResult = modifier.SetCrossSectionShape (ConnectorShape::Circular);
+        (void) shapeResult;   // 既に円形の場合等は無視して続行
+        auto tableResult = modifier.SetPreferenceTableId (tableId);
+        if (tableResult.IsErr ()) {
+            return tableResult;
+        }
+        return modifier.SetCrossSectionReferenceId (referenceId);
+    });
+    if (modifyResult.IsErr ()) {
+        return false;
+    }
+    auto setResult = routingElementDefault.Modify ([&] (RoutingElementDefault::Modifier& modifier) {
+        modifier.SetRoutingSegmentDefault (segmentDefault);
+    });
+    if (setResult.IsErr ()) {
+        return false;
+    }
+
+    outReferenceId = bestReferenceId;
+    return true;
+}
+#endif
+
+CreateMEPRoutesCommand::CreateMEPRoutesCommand () :
+    CommandBase (CommonSchema::Used)
+{
+}
+
+GS::String CreateMEPRoutesCommand::GetName () const
+{
+    return "CreateMEPRoutes";
+}
+
+GS::Optional<GS::UniString> CreateMEPRoutesCommand::GetInputParametersSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "routes": {
+                "type": "array",
+                "description": "Array of MEP routing elements to create.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "domain": {
+                            "type": "string",
+                            "description": "The MEP domain of the routing element.",
+                            "enum": ["Piping", "Ventilation", "CableCarrier"]
+                        },
+                        "mepSystemName": {
+                            "type": "string",
+                            "description": "Optional MEP system attribute name (e.g. drainage/water supply). Exact match first, then substring match. If omitted, the current tool default system is used."
+                        },
+                        "nodes": {
+                            "type": "array",
+                            "description": "The 3D coordinates of the route's corner points. Slope is expressed by the z values.",
+                            "items": { "$ref": "#/Coordinate3D" },
+                            "minItems": 2
+                        },
+                        "diameter": {
+                            "type": "number",
+                            "description": "Optional diameter (in meters) for circular cross section. The closest row of the segment preference table is used. Piping and Ventilation only."
+                        },
+                        "referenceId": {
+                            "type": "integer",
+                            "description": "Optional referenceId (preference table row key) for circular cross section. Takes precedence over diameter."
+                        },
+                        "width": {
+                            "type": "number",
+                            "description": "Optional width (in meters) for rectangular cross section. Must be given together with height."
+                        },
+                        "height": {
+                            "type": "number",
+                            "description": "Optional height (in meters) for rectangular cross section. Must be given together with width."
+                        }
+                    },
+                    "required": ["domain", "nodes"],
+                    "additionalProperties": false
+                }
+            },
+            "layerName": {
+                "type": "string",
+                "description": "Optional layer name for the created routes. The layer must exist (create it with CreateLayers first)."
+            }
+        },
+        "additionalProperties": false,
+        "required": ["routes"]
+    })";
+}
+
+GS::Optional<GS::UniString> CreateMEPRoutesCommand::GetResponseSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "elements": {
+                "$ref": "#/Elements"
+            },
+            "routeGeometries": {
+                "type": "array",
+                "description": "The node coordinates of the placed routes read back from the model, in the same order as the input routes. Empty nodes array for failed routes.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "nodes": {
+                            "type": "array",
+                            "items": { "$ref": "#/Coordinate3D" }
+                        }
+                    },
+                    "required": ["nodes"],
+                    "additionalProperties": false
+                }
+            }
+        },
+        "additionalProperties": false,
+        "required": [
+            "elements",
+            "routeGeometries"
+        ]
+    })";
+}
+
+GS::ObjectState CreateMEPRoutesCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
+{
+#ifdef ServerMainVers_2800
+    GS::Array<GS::ObjectState> routes;
+    parameters.Get ("routes", routes);
+
+    GS::UniString layerName;
+    API_AttributeIndex layerIndex;
+    bool hasLayer = false;
+    if (parameters.Get ("layerName", layerName) && !layerName.IsEmpty ()) {
+        hasLayer = FindLayerIndexByName (layerName, layerIndex);
+        if (!hasLayer) {
+            return CreateErrorResponse (APIERR_BADPARS, "Layer not found: " + layerName);
+        }
+    }
+
+    GS::ObjectState response;
+    const auto& elements = response.AddList<GS::ObjectState> ("elements");
+    const auto& routeGeometries = response.AddList<GS::ObjectState> ("routeGeometries");
+
+    const auto addEmptyGeometry = [&] () {
+        GS::ObjectState emptyGeometry;
+        emptyGeometry.AddList<GS::ObjectState> ("nodes");
+        routeGeometries (emptyGeometry);
+    };
+
+    for (const GS::ObjectState& route : routes) {
+        GS::UniString domainStr;
+        route.Get ("domain", domainStr);
+        const std::optional<Domain> domain = DomainFromString (domainStr);
+        if (!domain.has_value ()) {
+            elements (CreateErrorResponse (APIERR_BADPARS, "Invalid MEP domain: " + domainStr));
+            addEmptyGeometry ();
+            continue;
+        }
+
+        GS::Array<GS::ObjectState> nodesArray;
+        route.Get ("nodes", nodesArray);
+        if (nodesArray.GetSize () < 2) {
+            elements (CreateErrorResponse (APIERR_BADPARS, "A route needs at least 2 nodes."));
+            addEmptyGeometry ();
+            continue;
+        }
+
+        std::vector<API_Coord3D> nodes;
+        nodes.reserve (nodesArray.GetSize ());
+        for (const GS::ObjectState& nodeOS : nodesArray) {
+            nodes.push_back (Get3DCoordinateFromObjectState (nodeOS));
+        }
+        const UInt32 segmentCount = static_cast<UInt32> (nodes.size () - 1);
+
+        auto routingElementDefault = CreateRoutingElementDefault (*domain);
+        if (routingElementDefault.IsErr ()) {
+            elements (CreateErrorResponse (APIERR_GENERAL, GS::UniString ("Failed to create routing element default: ") + routingElementDefault.UnwrapErr ().text.c_str ()));
+            addEmptyGeometry ();
+            continue;
+        }
+
+        GS::UniString mepSystemName;
+        if (route.Get ("mepSystemName", mepSystemName) && !mepSystemName.IsEmpty ()) {
+            API_AttributeIndex systemIndex;
+            if (!FindMEPSystemIndexByName (mepSystemName, systemIndex)) {
+                elements (CreateErrorResponse (APIERR_BADPARS, "MEP system not found: " + mepSystemName));
+                addEmptyGeometry ();
+                continue;
+            }
+            auto systemResult = routingElementDefault->Modify ([&] (RoutingElementDefault::Modifier& modifier) {
+                return modifier.SetMEPSystem (systemIndex);
+            });
+            if (systemResult.IsErr ()) {
+                elements (CreateErrorResponse (APIERR_GENERAL, GS::UniString ("Failed to set the MEP system: ") + systemResult.UnwrapErr ().text.c_str ()));
+                addEmptyGeometry ();
+                continue;
+            }
+        }
+
+        std::map<UInt32, RoutingSegmentRectangularCrossSectionData> rectangularData;
+        std::map<UInt32, RoutingSegmentCircularCrossSectionData> circularData;
+
+        double width = 0.0;
+        double height = 0.0;
+        double diameter = 0.0;
+        Int32 referenceIdIn = -1;
+        const bool hasRect = route.Get ("width", width) && route.Get ("height", height);
+        if (hasRect) {
+            for (UInt32 i = 0; i < segmentCount; ++i) {
+                rectangularData.emplace (i, RoutingSegmentRectangularCrossSectionData (width, height));
+            }
+        } else if (route.Get ("referenceId", referenceIdIn) && referenceIdIn >= 0) {
+            for (UInt32 i = 0; i < segmentCount; ++i) {
+                circularData.emplace (i, RoutingSegmentCircularCrossSectionData (static_cast<UInt32> (referenceIdIn)));
+            }
+        } else if (route.Get ("diameter", diameter) && diameter > 0.0) {
+            UInt32 resolvedReferenceId = 0;
+            if (!ResolveCircularReferenceId (*domain, *routingElementDefault, diameter, resolvedReferenceId)) {
+                elements (CreateErrorResponse (APIERR_BADPARS, "No circular cross section row found for the requested diameter. Check the MEP preferences."));
+                addEmptyGeometry ();
+                continue;
+            }
+            for (UInt32 i = 0; i < segmentCount; ++i) {
+                circularData.emplace (i, RoutingSegmentCircularCrossSectionData (resolvedReferenceId));
+            }
+        }
+
+        auto placed = routingElementDefault->Place (nodes, rectangularData, circularData);
+        if (placed.IsErr ()) {
+            elements (CreateErrorResponse (APIERR_GENERAL, GS::UniString ("Failed to place MEP route: ") + placed.UnwrapErr ().text.c_str ()));
+            addEmptyGeometry ();
+            continue;
+        }
+
+        const API_Guid placedGuid = GSGuid2APIGuid (placed->GetGuid ());
+        if (hasLayer) {
+            SetLayerOfRoute (*placed, layerIndex);   // 失敗しても生成自体は成功として返す
+        }
+        elements (CreateElementIdObjectState (placedGuid));
+
+        GS::ObjectState geometry;
+        const auto& geometryNodes = geometry.AddList<GS::ObjectState> ("nodes");
+        auto placedRoute = RoutingElement::Get (*placed);
+        if (placedRoute.IsOk ()) {
+            for (const API_Coord3D& node : placedRoute->GetPolyLine ()) {
+                geometryNodes (Create3DCoordinateObjectState (node));
+            }
+        }
+        routeGeometries (geometry);
+    }
+
+    return response;
+#else
+    UNUSED_PARAMETER (parameters);
+    return CreateErrorResponse (APIERR_NOTSUPPORTED, "This command requires Archicad 28 or newer.");
+#endif
+}
+
+SetElementsLayerCommand::SetElementsLayerCommand () :
+    CommandBase (CommonSchema::Used)
+{
+}
+
+GS::String SetElementsLayerCommand::GetName () const
+{
+    return "SetElementsLayer";
+}
+
+GS::Optional<GS::UniString> SetElementsLayerCommand::GetInputParametersSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "elements": { "$ref": "#/Elements" },
+            "layerName": { "type": "string", "description": "Target layer name (must already exist)." }
+        },
+        "additionalProperties": false,
+        "required": ["elements", "layerName"]
+    })";
+}
+
+GS::Optional<GS::UniString> SetElementsLayerCommand::GetResponseSchema () const
+{
+    return R"({
+        "type": "object",
+        "properties": {
+            "movedCount": { "type": "integer" }
+        },
+        "additionalProperties": false,
+        "required": ["movedCount"]
+    })";
+}
+
+GS::ObjectState SetElementsLayerCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
+{
+    GS::UniString layerName;
+    parameters.Get ("layerName", layerName);
+    API_AttributeIndex layerIndex;
+    {
+        GS::Array<API_Attribute> attrs;
+        ACAPI_Attribute_GetAttributesByType (API_LayerID, attrs);
+        bool found = false;
+        for (const API_Attribute& a : attrs) {
+            if (GS::UniString (a.header.name) == layerName) { layerIndex = a.header.index; found = true; break; }
+        }
+        if (!found) {
+            return CreateErrorResponse (APIERR_BADPARS, "Layer not found: " + layerName);
+        }
+    }
+
+    GS::Array<GS::ObjectState> elements;
+    parameters.Get ("elements", elements);
+
+    Int32 moved = 0;
+    ACAPI_CallUndoableCommand ("Set elements layer", [&] () -> GSErrCode {
+        for (const GS::ObjectState& e : elements) {
+            const API_Guid guid = GetGuidFromElementsArrayItem (e);
+            API_Element element = {};
+            element.header.guid = guid;
+            if (ACAPI_Element_Get (&element) != NoError) {
+                continue;
+            }
+            API_Element mask = {};
+            ACAPI_ELEMENT_MASK_CLEAR (mask);
+            ACAPI_ELEMENT_MASK_SET (mask, API_Elem_Head, layer);
+            element.header.layer = layerIndex;
+            if (ACAPI_Element_Change (&element, &mask, nullptr, 0, true) == NoError) {
+                moved++;
+            }
+        }
+        return NoError;
+    });
+
+    GS::ObjectState response;
+    response.Add ("movedCount", moved);
+    return response;
 }
 
 GetMEPPreferenceTablesCommand::GetMEPPreferenceTablesCommand () :

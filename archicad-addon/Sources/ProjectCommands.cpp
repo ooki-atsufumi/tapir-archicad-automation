@@ -1,5 +1,6 @@
 #include "ProjectCommands.hpp"
 #include "MigrationHelper.hpp"
+#include "Location.hpp"
 
 GetProjectInfoCommand::GetProjectInfoCommand () :
     CommandBase (CommonSchema::NotUsed)
@@ -870,8 +871,21 @@ GS::Optional<GS::UniString> SaveProjectCommand::GetRawResponseSchema () const
     })";
 }
 
-GS::ObjectState SaveProjectCommand::Execute (const GS::ObjectState& /*parameters*/, GS::ProcessControl& /*processControl*/) const
+GS::ObjectState SaveProjectCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
 {
+    GS::UniString projectPath;
+    if (parameters.Get ("projectPath", projectPath) && !projectPath.IsEmpty ()) {
+        IO::Location fileLoc (projectPath);
+        API_FileSavePars fsp = {};
+        fsp.fileTypeID = APIFType_PlanFile;
+        fsp.file = &fileLoc;
+        GSErrCode err = ACAPI_ProjectOperation_Save (&fsp);
+        if (err != NoError) {
+            return CreateFailedExecutionResult (err, "Failed to save the project to the given path.");
+        }
+        return CreateSuccessfulExecutionResult ();
+    }
+
     GSErrCode err = ACAPI_ProjectOperation_Save ();
     if (err != NoError) {
         return CreateFailedExecutionResult (APIERR_COMMANDFAILED, "Failed to save the project.");

@@ -227,6 +227,14 @@ GS::Optional<GS::UniString> CreateColumnsCommand::GetInputParametersSchema () co
                             "type": "number",
                             "description": "Optional column rotation angle in radians."
                         },
+                        "slantAngle": {
+                            "type": "number",
+                            "description": "Optional slant angle in radians. If provided, the column is created as a slanted column."
+                        },
+                        "slantDirection": {
+                            "type": "number",
+                            "description": "Optional slant direction angle on the horizontal plane in radians."
+                        },
                         "width": {
                             "type": "number",
                             "description": "Cross section width of the column. Applied to all segments.",
@@ -261,7 +269,8 @@ GS::Optional<GS::UniString> CreateColumnsCommand::GetInputParametersSchema () co
                         "floorIndex": {
                             "type": "integer",
                             "description": "Optional floor index. If omitted, derived from the coordinate's z value."
-                        }
+                        },
+                        "buildingMaterialId": { "$ref": "#/AttributeId" }
                     },
                     "additionalProperties": false,
                     "required" : [
@@ -296,6 +305,16 @@ GS::Optional<GS::ObjectState> CreateColumnsCommand::SetTypeSpecificParameters (A
     GS::UniString coreAnchor;
     if (parameters.Get ("coreAnchor", coreAnchor)) {
         element.column.coreAnchor = ParseAnchorPointString (coreAnchor);
+    }
+
+    double slantAngle = 0.0;
+    if (parameters.Get ("slantAngle", slantAngle)) {
+        element.column.isSlanted = true;
+        element.column.slantAngle = slantAngle;
+    }
+    double slantDirection = 0.0;
+    if (parameters.Get ("slantDirection", slantDirection)) {
+        element.column.slantDirectionAngle = slantDirection;
     }
 
     double width = 0.0;
@@ -334,6 +353,21 @@ GS::Optional<GS::ObjectState> CreateColumnsCommand::SetTypeSpecificParameters (A
                 segment.modelElemStructureType = API_BasicStructure;
                 segment.buildingMaterial = GetAttributeIndexFromGuid (API_BuildingMaterialID, GetGuidFromObjectState (*buildingMaterialIdOs));
             }
+        }
+    }
+
+    const GS::ObjectState* buildingMaterialIdOS = parameters.Get ("buildingMaterialId");
+    if (buildingMaterialIdOS != nullptr && memo.columnSegments != nullptr) {
+        API_Attribute attribute = {};
+        attribute.header.typeID = API_BuildingMaterialID;
+        attribute.header.guid = GetGuidFromObjectState (*buildingMaterialIdOS);
+        if (attribute.header.guid == APINULLGuid || ACAPI_Attribute_Get (&attribute) != NoError) {
+            return CreateErrorResponse (APIERR_BADPARS, "Invalid column building material.");
+        }
+        GSSize nSegments = BMGetPtrSize (reinterpret_cast<GSPtr>(memo.columnSegments)) / sizeof (API_ColumnSegmentType);
+        for (GSSize i = 0; i < nSegments; ++i) {
+            memo.columnSegments[i].assemblySegmentData.modelElemStructureType = API_BasicStructure;
+            memo.columnSegments[i].assemblySegmentData.buildingMaterial = attribute.header.index;
         }
     }
 
@@ -2089,6 +2123,10 @@ GS::Optional<GS::UniString> CreateMeshesCommand::GetInputParametersSchema () con
                         "type": "number",
                         "description": "The height of the skirt."
                     },
+                    "buildingMaterialId": {
+                        "$ref": "#/AttributeId",
+                        "description": "Optional building material. Sets the mesh's building material and overrides its top/side/bottom surfaces to that material's surface (so the mesh is colored)."
+                    },
                     "ridges": {
                         "type": "string",
                         "description": "How ridges between mesh facets are displayed in 3D: 'AllSharp' shows all ridges, 'AllSmooth' hides them, 'UserDefined' shows only ridges along user-defined level lines (the drawing-set look for contour-line topography).",
@@ -2225,6 +2263,24 @@ GS::Optional<GS::ObjectState> CreateMeshesCommand::SetTypeSpecificParameters (AP
     GS::Array<GS::ObjectState> sublines;
     parameters.Get ("sublines", sublines);
     BuildMeshSublinesMemoFromGeometry (element, memo, sublines);
+
+    // ★ メッシュに建材(色)を付与。MeshData には標準で色指定が無いため自前パッチ。
+    //   buildingMaterial を設定し、さらに top/side/bottom 表面をその建材の cutMaterial で上書きする
+    //   (ツール既定の表面オーバーライドが残って色が反映されない事故を防ぐ)。
+    const GS::ObjectState* buildingMaterialIdOS = parameters.Get ("buildingMaterialId");
+    if (buildingMaterialIdOS != nullptr) {
+        API_Attribute attribute = {};
+        attribute.header.typeID = API_BuildingMaterialID;
+        attribute.header.guid = GetGuidFromObjectState (*buildingMaterialIdOS);
+        if (attribute.header.guid == APINULLGuid || ACAPI_Attribute_Get (&attribute) != NoError) {
+            return CreateErrorResponse (APIERR_BADPARS, "Invalid mesh building material.");
+        }
+        element.mesh.buildingMaterial = attribute.header.index;
+        element.mesh.topMat = attribute.buildingMaterial.cutMaterial;
+        element.mesh.sideMat = attribute.buildingMaterial.cutMaterial;
+        element.mesh.botMat = attribute.buildingMaterial.cutMaterial;
+        element.mesh.materialsChained = false;
+    }
 
     return {};
 }
@@ -2494,6 +2550,10 @@ GS::Optional<GS::UniString> CreateTextsCommand::GetInputParametersSchema () cons
                     "floorIndex": {
                         "type": "integer",
                         "description": "Optional floor index. If omitted, derived from the coordinate's z value."
+                    },
+                    "layerIndex": {
+                        "type": "integer",
+                        "description": "Optional layer attribute index. If omitted, the Text tool default layer is used."
                     }
                 },
                 "additionalProperties": false,
@@ -2525,6 +2585,11 @@ GS::Optional<GS::ObjectState> CreateTextsCommand::SetTypeSpecificParameters (API
     } else {
         const auto floorIndexAndOffset = GetFloorIndexAndOffset (apiCoordinate.z, stories);
         element.header.floorInd = floorIndexAndOffset.first;
+    }
+
+    Int32 layerIndex = 0;
+    if (parameters.Get ("layerIndex", layerIndex) && layerIndex > 0) {
+        element.header.layer = ACAPI_CreateAttributeIndex (layerIndex);
     }
 
     element.text.loc.x = apiCoordinate.x;

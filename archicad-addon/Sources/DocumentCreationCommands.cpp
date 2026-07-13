@@ -114,6 +114,21 @@ bool GetLayoutInfoForDatabase (const API_DatabaseUnId& databaseUnId, API_LayoutI
     return ACAPI_Navigator_GetLayoutSets (&layoutInfo, const_cast<API_DatabaseUnId*> (&databaseUnId)) == NoError;
 }
 
+// Resize a (typically freshly created) master layout. Sizes/margins are in mm.
+void SetMasterLayoutSize (const API_DatabaseUnId& databaseUnId, double widthMm, double heightMm)
+{
+    API_LayoutInfo info = {};
+    if (ACAPI_Navigator_GetLayoutSets (&info, const_cast<API_DatabaseUnId*> (&databaseUnId)) != NoError) {
+        return;
+    }
+    info.sizeX = widthMm;
+    info.sizeY = heightMm;
+    info.leftMargin = info.rightMargin = info.topMargin = info.bottomMargin = 10.0;
+    ACAPI_Navigator_ChangeLayoutSets (&info, const_cast<API_DatabaseUnId*> (&databaseUnId));
+    delete info.customData;
+    info.customData = nullptr;
+}
+
 }
 
 CreateDetailsCommand::CreateDetailsCommand () :
@@ -268,6 +283,8 @@ GS::Optional<GS::UniString> CreateLayoutCommand::GetInputParametersSchema () con
                         "masterNavigatorItemId": { "$ref": "#/NavigatorItemId" },
                         "layoutName":            { "type": "string", "minLength": 1 },
                         "parentNavigatorItemId": { "$ref": "#/NavigatorItemId" },
+                        "paperWidth":            { "type": "number", "description": "Paper width in mm, applied directly to the master layout (found or freshly created via masterLayoutName)." },
+                        "paperHeight":           { "type": "number", "description": "Paper height in mm, applied directly to the master layout (found or freshly created via masterLayoutName)." },
                         "layoutParameters": {
                             "type": "object",
                             "properties": {
@@ -342,6 +359,14 @@ GS::ObjectState CreateLayoutCommand::Execute (const GS::ObjectState& parameters,
                     databases.Push (CreateErrorResponse (createMasterErr, "Failed to create master layout."));
                     continue;
                 }
+            }
+
+            // A newly auto-created master inherits an implementation default (A1 in JPN
+            // templates). Size it to the requested paper if paperWidth/paperHeight were given.
+            double paperWidth = 0.0, paperHeight = 0.0;
+            if (item.Get ("paperWidth", paperWidth) && item.Get ("paperHeight", paperHeight) &&
+                    paperWidth > 0.0 && paperHeight > 0.0) {
+                SetMasterLayoutSize (masterLayoutDbInfo.databaseUnId, paperWidth, paperHeight);
             }
         }
 
