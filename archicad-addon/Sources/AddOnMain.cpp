@@ -579,7 +579,6 @@ GSErrCode Initialize (void)
         AddCommandGroup (elementCommands);
     }
 
-    { // MEP Commands
 
     { // Graphical Override Commands
         CommandGroup graphicalOverrideCommands ("Graphical Override Commands");
@@ -1265,6 +1264,10 @@ GSErrCode Initialize (void)
         err |= RegisterCommand<SetElementsLayerCommand> (
             mepCommands, "1.5.0",
             "Sets the layer of the given elements via classic API (works for MEP sub-elements)."
+        );
+        err |= RegisterCommand<RotateElementsCommand> (
+            mepCommands, "1.5.1",
+            "Rotates elements around a reference point (origin, beginPoint, endPoint define the arc)."
         );
         AddCommandGroup (mepCommands);
     }

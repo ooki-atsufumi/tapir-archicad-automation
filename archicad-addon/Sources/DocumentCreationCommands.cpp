@@ -402,6 +402,16 @@ GS::ObjectState CreateLayoutCommand::Execute (const GS::ObjectState& parameters,
             layoutParamsOS->Get ("displayMasterLayoutBelow", layoutInfo.showMasterBelow);
         }
 
+        // paperWidth/paperHeight (mm) が指定された場合はレイアウト自体に直接適用する。
+        // マスター経由のサイズ読み取り(GetLayoutSets)は、直前にマスターを作成/変更した同一
+        // バッチ内では変更前の値(A1)を返すことがあり(実測)、これが最も確実。
+        double reqWidth = 0.0, reqHeight = 0.0;
+        if (item.Get ("paperWidth", reqWidth) && item.Get ("paperHeight", reqHeight) &&
+                reqWidth > 0.0 && reqHeight > 0.0) {
+            layoutInfo.sizeX = reqWidth;
+            layoutInfo.sizeY = reqHeight;
+        }
+
         API_Guid parentNavGuid = APINULLGuid;
         const GS::ObjectState* parentOS = item.Get ("parentNavigatorItemId");
         if (parentOS != nullptr) {
