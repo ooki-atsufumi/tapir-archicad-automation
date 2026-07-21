@@ -2267,7 +2267,7 @@ static bool ApplyBeamSectionToMemo (API_Guid elemGuid, const GS::ObjectState& de
     return ACAPI_Element_ChangeMemo (elemGuid, APIMemoMask_BeamSegment, &memo) == NoError;
 }
 
-bool BuildCuboidMorphMemo (double sizeX, double sizeY, double sizeZ, API_AttributeIndex buildingMaterial, API_ElementMemo& memo)
+bool BuildCuboidMorphMemo (double sizeX, double sizeY, double sizeZ, API_AttributeIndex buildingMaterial, API_ElementMemo& memo, double topExpansion, API_AttributeIndex surface)
 {
     void* bodyData = nullptr;
     if (ACAPI_Body_Create (nullptr, nullptr, &bodyData) != NoError || bodyData == nullptr) {
@@ -2280,15 +2280,17 @@ bool BuildCuboidMorphMemo (double sizeX, double sizeY, double sizeZ, API_Attribu
         }
     });
 
+    // topExpansion > 0 の場合は上面矩形を全周に広げた錐台(法面付き掘削形状など)
+    const double e = topExpansion;
     API_Coord3D coords[] = {
-        {0.0,   0.0,   0.0},
-        {sizeX, 0.0,   0.0},
-        {sizeX, sizeY, 0.0},
-        {0.0,   sizeY, 0.0},
-        {0.0,   0.0,   sizeZ},
-        {sizeX, 0.0,   sizeZ},
-        {sizeX, sizeY, sizeZ},
-        {0.0,   sizeY, sizeZ}
+        {0.0,       0.0,       0.0},
+        {sizeX,     0.0,       0.0},
+        {sizeX,     sizeY,     0.0},
+        {0.0,       sizeY,     0.0},
+        {-e,        -e,        sizeZ},
+        {sizeX + e, -e,        sizeZ},
+        {sizeX + e, sizeY + e, sizeZ},
+        {-e,        sizeY + e, sizeZ}
     };
 
     UInt32 vertices[8];
@@ -2310,15 +2312,19 @@ bool BuildCuboidMorphMemo (double sizeX, double sizeY, double sizeZ, API_Attribu
     ACAPI_Body_AddEdge (bodyData, vertices[2], vertices[6], edges[10]);
     ACAPI_Body_AddEdge (bodyData, vertices[3], vertices[7], edges[11]);
 
-#ifdef ServerMainVers_2700
-    API_OverriddenAttribute material;
-    material = buildingMaterial;
-#else
+    // 面の表示材質(Surface)。surfaceが有効なら全面に上書き適用する。
+    // ★注意: ここに渡すのはSurfaceのindex。以前は誤って建材indexを渡していた
+    //   (建材#Nと同番号のSurfaceが偶然表示される=タイル柄になるバグ)。
     (void) buildingMaterial;
     API_OverriddenAttribute material = {};
-#endif
+    if (surface != APIInvalidAttributeIndex) {
+        material = surface;
+    }
+    // 閉じたソリッドにするには、各エッジが隣接2面で互いに逆向きに走る必要がある。
+    // 底面のみ逆順(0→3→2→1)にして側面(+方向)と整合させる。
+    // (以前は底面も+方向で非ソリッド=SEO減算不可のモルフになっていた)
     UInt32 polygon = 0;
-    ACAPI_Body_AddPolygon (bodyData, {edges[0], edges[1], edges[2], edges[3]}, 0, material, polygon);
+    ACAPI_Body_AddPolygon (bodyData, {-edges[3], -edges[2], -edges[1], -edges[0]}, 0, material, polygon);
     ACAPI_Body_AddPolygon (bodyData, {edges[4], edges[5], edges[6], edges[7]}, 0, material, polygon);
     ACAPI_Body_AddPolygon (bodyData, {edges[0], edges[9], -edges[4], -edges[8]}, 0, material, polygon);
     ACAPI_Body_AddPolygon (bodyData, {edges[1], edges[10], -edges[5], -edges[9]}, 0, material, polygon);
@@ -4238,6 +4244,7 @@ GS::Optional<GS::UniString> CreateMorphsCommand::GetInputParametersSchema () con
                         "yAxis": { "$ref": "#/Coordinate3D" },
                         "zAxis": { "$ref": "#/Coordinate3D" },
                         "surfaceId": { "$ref": "#/AttributeId" },
+                        "topExpansion": { "type": "number", "minimum": 0.0, "description": "Only used with `size` (box) morphs. Expands the top rectangle outwards on all four sides by this amount, creating a frustum (e.g. sloped excavation shape). 0 creates a cuboid." },
                         "castShadow": { "type": "boolean" },
                         "receiveShadow": { "type": "boolean" },
                         "isAutoOnStoryVisibility": { "type": "boolean" },
@@ -4379,6 +4386,15 @@ GS::ObjectState CreateMorphsCommand::Execute (const GS::ObjectState& parameters,
                 element.morph.buildingMaterial = buildingMaterialIndex;
             }
 
+            API_AttributeIndex surfaceIndex = APIInvalidAttributeIndex;
+            auto surfaceId = GetOptionalObjectState (data, "surfaceId");
+            if (surfaceId.HasValue ()) {
+                if (!ResolveAttributeIndex (surfaceId.Get (), API_MaterialID, surfaceIndex)) {
+                    elements.Push (CreateErrorResponse (APIERR_BADPARS, "Invalid morph surface."));
+                    continue;
+                }
+            }
+
             double* tmx = element.morph.tranmat.tmx;
             tmx[0] = 1.0;  tmx[4] = 0.0;  tmx[8] = 0.0;
             tmx[1] = 0.0;  tmx[5] = 1.0;  tmx[9] = 0.0;
@@ -4396,6 +4412,14 @@ GS::ObjectState CreateMorphsCommand::Execute (const GS::ObjectState& parameters,
                 }
             }
 
+            double topExpansion = 0.0;
+            if (data.Contains ("topExpansion")) {
+                data.Get ("topExpansion", topExpansion);
+                if (topExpansion < 0.0) {
+                    topExpansion = 0.0;
+                }
+            }
+
             API_ElementMemo memo = {};
             const GS::OnExit cleanup ([&]() {
                 ACAPI_DisposeElemMemoHdls (&memo);
@@ -4407,7 +4431,7 @@ GS::ObjectState CreateMorphsCommand::Execute (const GS::ObjectState& parameters,
                     elements.Push (CreateErrorResponse (APIERR_BADPARS, "Morph 'size' values must be positive."));
                     continue;
                 }
-                if (!BuildCuboidMorphMemo (size.x, size.y, size.z, element.morph.buildingMaterial, memo)) {
+                if (!BuildCuboidMorphMemo (size.x, size.y, size.z, element.morph.buildingMaterial, memo, topExpansion, surfaceIndex)) {
                     elements.Push (CreateErrorResponse (APIERR_GENERAL, "Failed to build morph body."));
                     continue;
                 }
