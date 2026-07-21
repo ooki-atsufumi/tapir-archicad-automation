@@ -1,0 +1,306 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\3DCutPlaneCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\AboutDialog.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\AddOnMain.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ApplicationCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\AttributeCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ClassificationCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\CommandBase.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\Config.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\DesignOptionCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\DeveloperTools.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\DocumentCreationCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementCreationCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementGDLParameterCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementGroupingCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ExtendedElementCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\FavoritesCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\GraphicalOverrideCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\IFCCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\IssueCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\LibraryCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\MEPCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\NavigatorCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\NotificationCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ProjectCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\PropertyCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RevisionCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\SchemaDefinitions.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ScriptUICommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ScriptUIPalette.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\SolidElementOperationCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\TapirPalette.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\TeamworkCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\UvManager.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\VersionChecker.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ViewCreationCommands.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\3DCutPlaneCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\APIEnvir.h">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\AboutDialog.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\AddOnVersion.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ApplicationCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\AttributeCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ClassificationCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\CommandBase.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\Config.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\DesignOptionCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\DeveloperTools.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\DocumentCreationCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementCreationCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementGDLParameterCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ElementGroupingCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ExtendedElementCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\FavoritesCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\GraphicalOverrideCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\IFCCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\IssueCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\LibraryCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\MEPCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\MigrationHelper.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\NavigatorCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\NotificationCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ProjectCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\PropertyCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ResourceIds.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RevisionCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\SchemaDefinitions.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ScriptUICommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ScriptUIPalette.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\SolidElementOperationCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\TapirPalette.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\TeamworkCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\UvManager.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\VersionChecker.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\ViewCreationCommands.hpp">
+      <Filter>Sources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\BuildAC29\CMakeFiles\24352311078992fd0599a41cfe541f40\AddOnResources.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\Add_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\Code_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\Del_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\Kill_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\RunWithUpdate_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\Run_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\Shortcuts_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\TapirLogoMini_24x24.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\TapirLogo_128x128.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\Update_18x18.svg">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\Images\CommonSchemaDefinitions.json">
+      <Filter>Images</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX.win\AddOnMain.rc2">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RFIX\AddOnFix.grc">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Sources\RINT\AddOn.grc">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Tools\CompileResources.py">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Tools\download_and_unzip.py">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\Tools\update_addon_and_restart_archicad.py">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="C:\Users\sdh001905\tapir-archicad-automation\archicad-addon\BuildAC29\ResourceObjects\AddOnResources.stamp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{80F24173-E1A5-32D1-8862-20708FBF80D1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Images">
+      <UniqueIdentifier>{89A53F02-BEAB-325F-BB97-29D3FB994BE1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{F3DA5C25-D567-3326-87AB-8009A2BC40D2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources">
+      <UniqueIdentifier>{3D9BDF35-4826-3E18-B244-CDF3C5BA4670}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

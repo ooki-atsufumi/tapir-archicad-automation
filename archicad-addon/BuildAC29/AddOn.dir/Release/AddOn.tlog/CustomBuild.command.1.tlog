@@ -1,0 +1,24 @@
+^C:\USERS\SDH001905\TAPIR-ARCHICAD-AUTOMATION\ARCHICAD-ADDON\BUILDAC29\CMAKEFILES\24352311078992FD0599A41CFE541F40\ADDONRESOURCES.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -E make_directory C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/BuildAC29/ResourceObjects
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\sdh001905\AppData\Local\Programs\Python\Python314\python.exe C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/Tools/CompileResources.py INT 29 C:/Users/sdh001905/archicad-addon-cmake/Build/DevKit/APIDevKit-29/Support C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/Sources C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/Sources C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/BuildAC29/ResourceObjects C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/BuildAC29/ResourceObjects/TapirAddOn_AC29_Win.res
+if %errorlevel% neq 0 goto :cmEnd
+"C:\Program Files\CMake\bin\cmake.exe" -E touch C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/BuildAC29/ResourceObjects/AddOnResources.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+^C:\USERS\SDH001905\TAPIR-ARCHICAD-AUTOMATION\ARCHICAD-ADDON\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/sdh001905/tapir-archicad-automation/archicad-addon -BC:/Users/sdh001905/tapir-archicad-automation/archicad-addon/BuildAC29 --check-stamp-file C:/Users/sdh001905/tapir-archicad-automation/archicad-addon/BuildAC29/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
