@@ -5270,9 +5270,6 @@ GS::ObjectState GetPensCommand::Execute (const GS::ObjectState& /*parameters*/, 
     return response;
 }
 
-    return response;
-}
-
 CreateCompositesCommand::CreateCompositesCommand () :
     CommandBase (CommonSchema::Used)
 {
