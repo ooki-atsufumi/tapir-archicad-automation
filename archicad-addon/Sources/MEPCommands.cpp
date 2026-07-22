@@ -1226,6 +1226,7 @@ GS::ObjectState ConnectMEPElementsCommand::Execute (const GS::ObjectState& param
 }
 
 #ifdef ServerMainVers_2800
+template <typename TableT>
 static bool ScanTableForDiameter (const TableT& table, double diameter, double& bestDiff, UInt32& outReferenceId)
 {
     bool found = false;
@@ -1873,106 +1874,3 @@ GS::ObjectState GetMEPPreferenceTablesCommand::Execute (const GS::ObjectState& p
 }
 #endif
 
-RotateElementsCommand::RotateElementsCommand () :
-    CommandBase (CommonSchema::Used)
-{
-}
-
-GS::String RotateElementsCommand::GetName () const
-{
-    return "RotateElements";
-}
-
-GS::Optional<GS::UniString> RotateElementsCommand::GetInputParametersSchema () const
-{
-    return R"({
-        "type": "object",
-        "properties": {
-            "elementsWithRotations": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "elementId": { "$ref": "#/ElementId" },
-                        "rotation": {
-                            "type": "object",
-                            "properties": {
-                                "origin":     { "$ref": "#/Coordinate2D", "description": "Center of rotation." },
-                                "beginPoint": { "$ref": "#/Coordinate2D", "description": "Starting point of the rotation arc." },
-                                "endPoint":   { "$ref": "#/Coordinate2D", "description": "End point of the rotation arc." }
-                            },
-                            "additionalProperties": false,
-                            "required": ["origin", "beginPoint", "endPoint"]
-                        },
-                        "copy": { "type": "boolean" }
-                    },
-                    "additionalProperties": false,
-                    "required": ["elementId", "rotation"]
-                }
-            }
-        },
-        "additionalProperties": false,
-        "required": ["elementsWithRotations"]
-    })";
-}
-
-GS::Optional<GS::UniString> RotateElementsCommand::GetResponseSchema () const
-{
-    return R"({
-        "type": "object",
-        "properties": {
-            "rotatedCount": { "type": "integer" }
-        },
-        "additionalProperties": false,
-        "required": ["rotatedCount"]
-    })";
-}
-
-GS::ObjectState RotateElementsCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
-{
-    GS::Array<GS::ObjectState> items;
-    parameters.Get ("elementsWithRotations", items);
-
-    Int32 rotated = 0;
-    ACAPI_CallUndoableCommand ("Rotate elements", [&] () -> GSErrCode {
-        for (const GS::ObjectState& item : items) {
-            const API_Guid guid = GetGuidFromElementsArrayItem (item);
-            const GS::ObjectState* rotation = item.Get ("rotation");
-            if (rotation == nullptr) {
-                continue;
-            }
-            const GS::ObjectState* originOS = rotation->Get ("origin");
-            const GS::ObjectState* begOS = rotation->Get ("beginPoint");
-            const GS::ObjectState* endOS = rotation->Get ("endPoint");
-            if (originOS == nullptr || begOS == nullptr || endOS == nullptr) {
-                continue;
-            }
-
-            bool copy = false;
-            item.Get ("copy", copy);
-
-            API_EditPars pars = {};
-            pars.typeID = APIEdit_Rotate;
-            pars.withDelete = !copy;
-            originOS->Get ("x", pars.origC.x);
-            originOS->Get ("y", pars.origC.y);
-            begOS->Get ("x", pars.begC.x);
-            begOS->Get ("y", pars.begC.y);
-            endOS->Get ("x", pars.endC.x);
-            endOS->Get ("y", pars.endC.y);
-            pars.begC.z = 0.0;
-            pars.endC.z = 0.0;
-
-            GS::Array<API_Neig> neigs;
-            neigs.Push (API_Neig (guid));
-            if (ACAPI_Element_Edit (&neigs, pars) == NoError) {
-                rotated++;
-            }
-        }
-        return NoError;
-    });
-
-    GS::ObjectState response;
-    response.Add ("rotatedCount", rotated);
-    return response;
-}

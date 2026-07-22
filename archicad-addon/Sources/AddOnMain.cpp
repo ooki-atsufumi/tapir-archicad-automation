@@ -801,10 +801,6 @@ GSErrCode Initialize (void)
             attributeCommands, "1.2.2",
             "Creates or overwrites Surface attributes based on the given parameters."
         );
-        err |= RegisterCommand<CreateMEPSystemsCommand> (
-            attributeCommands, "1.0.0",
-            "Creates or overwrites MEP System attributes (domain, pens and body material) for per-system color coding."
-        );
         err |= RegisterCommand<GetPensCommand> (
             attributeCommands, "1.0.0",
             "Returns the index and RGB of every pen in the active pen set."
@@ -1264,10 +1260,6 @@ GSErrCode Initialize (void)
         err |= RegisterCommand<SetElementsLayerCommand> (
             mepCommands, "1.5.0",
             "Sets the layer of the given elements via classic API (works for MEP sub-elements)."
-        );
-        err |= RegisterCommand<RotateElementsCommand> (
-            mepCommands, "1.5.1",
-            "Rotates elements around a reference point (origin, beginPoint, endPoint define the arc)."
         );
         AddCommandGroup (mepCommands);
     }
