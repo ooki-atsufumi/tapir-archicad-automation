@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEP Auto-Routing Tool — Technical Overview</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}html{-webkit-text-size-adjust:100%}</style>
+</head>
+<body>
+<style>
+  :root{
+    --paper:#ECEFEC; --card:#FFFFFF; --card-2:#F7F9F7;
+    --ink:#16262E; --ink-soft:#43555C; --muted:#7A888E;
+    --line:#D3DAD8; --line-soft:#E3E8E5;
+    --accent:#0F6E7A; --accent-deep:#0A4E58; --accent-tint:#E1EEEF;
+    --drain:#2F6DB5; --drain-t:#E5EDF7;
+    --ref:#C0632A;   --ref-t:#F6EAE0;
+    --vent:#4C8A5B;  --vent-t:#E6F0E8;
+    --amber:#B8802A;
+    --mono:ui-monospace,"Cascadia Code","Consolas","SFMono-Regular",monospace;
+    --sans:"Inter","Segoe UI","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  .wrap{
+    font-family:var(--sans); color:var(--ink); background:var(--paper);
+    line-height:1.75; font-size:16px; -webkit-font-smoothing:antialiased;
+    padding:0 0 5rem;
+  }
+  .wrap :is(h1,h2,h3,h4){text-wrap:balance; line-height:1.3; margin:0}
+  .col{max-width:75rem; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.5rem)}
+  .measure{max-width:64ch}
+
+  /* ---------- header ---------- */
+  .hero{
+    position:relative; overflow:hidden;
+    background:linear-gradient(160deg,#DFF2FB 0%,#BFE6F5 55%,#A9DCEF 100%); color:var(--ink);
+    border-bottom:3px solid var(--accent);
+  }
+  .hero::before{
+    content:""; position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(15,110,122,.10) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(15,110,122,.10) 1px,transparent 1px);
+    background-size:26px 26px; mask-image:linear-gradient(180deg,#000 0%,transparent 92%);
+  }
+  .hero .col{position:relative; padding-top:clamp(2.4rem,6vw,4rem); padding-bottom:clamp(2.2rem,5vw,3.4rem)}
+  .kicker{font-family:var(--mono); font-size:.74rem; letter-spacing:.24em; text-transform:uppercase;
+    color:var(--accent-deep); margin-bottom:1.1rem}
+  .hero h1{font-size:clamp(1.9rem,4.6vw,3.1rem); font-weight:700; letter-spacing:.01em}
+  .hero h1 span{color:var(--accent-deep)}
+  .lede{margin-top:1.1rem; max-width:60ch; color:var(--ink-soft); font-size:clamp(1rem,1.6vw,1.14rem)}
+  .hero-meta{display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.6rem}
+  .tag{font-family:var(--mono); font-size:.76rem; letter-spacing:.04em;
+    background:rgba(255,255,255,.65); border:1px solid var(--accent);
+    color:var(--accent-deep); padding:.32rem .7rem; border-radius:2px}
+
+  /* ---------- section scaffolding ---------- */
+  section{padding-top:clamp(2.6rem,5vw,3.8rem)}
+  .eyebrow{display:flex; align-items:center; gap:.7rem; margin-bottom:1rem}
+  .eyebrow .num{font-family:var(--mono); font-size:.8rem; color:var(--accent);
+    border:1px solid var(--accent); border-radius:2px; padding:.12rem .5rem; letter-spacing:.05em}
+  .eyebrow .lbl{font-family:var(--mono); font-size:.76rem; letter-spacing:.22em; text-transform:uppercase; color:var(--muted)}
+  h2.title{font-size:clamp(1.35rem,2.6vw,1.85rem); font-weight:700; margin-bottom:.5rem}
+  .intro{color:var(--ink-soft); margin-bottom:1.7rem}
+  .rule{height:1px; background:var(--line); border:0; margin:0}
+
+  p{margin:0 0 .9rem}
+  a{color:var(--accent-deep)}
+  code{font-family:var(--mono); font-size:.86em; background:var(--accent-tint);
+    color:var(--accent-deep); padding:.08em .38em; border-radius:3px; word-break:break-word}
+
+  /* ---------- overview systems ---------- */
+  .sys3{display:grid; grid-template-columns:repeat(3,1fr); gap:1rem}
+  @media(max-width:680px){.sys3{grid-template-columns:1fr}}
+  .sys{background:var(--card); border:1px solid var(--line); border-top:3px solid var(--c);
+    border-radius:4px; padding:1.1rem 1.15rem}
+  .sys .nm{display:flex; align-items:center; gap:.55rem; font-weight:700; font-size:1.05rem; margin-bottom:.35rem}
+  .dot{width:.7rem; height:.7rem; border-radius:50%; background:var(--c); flex:none}
+  .sys p{font-size:.92rem; color:var(--ink-soft); margin:0}
+  .sys .sel{font-family:var(--mono); font-size:.76rem; color:var(--muted); margin-top:.7rem; display:block}
+
+  /* ---------- stack diagram ---------- */
+  .stack{display:flex; flex-direction:column; gap:0; background:var(--card);
+    border:1px solid var(--line); border-radius:6px; overflow:hidden}
+  .layer{display:grid; grid-template-columns:auto 1fr; gap:1rem 1.3rem; align-items:center;
+    padding:1rem 1.25rem; border-bottom:1px solid var(--line-soft)}
+  .layer:last-child{border-bottom:0}
+  .layer .idx{font-family:var(--mono); font-size:.78rem; color:#fff; background:var(--accent);
+    width:1.7rem; height:1.7rem; display:grid; place-items:center; border-radius:3px}
+  .layer.host .idx{background:var(--ink)}
+  .layer.gdl .idx{background:var(--vent)}
+  .layer h4{font-size:1rem; font-weight:700}
+  .layer .role{font-size:.88rem; color:var(--ink-soft); margin-top:.15rem}
+  .layer .role b{color:var(--ink); font-weight:700}
+  .flowchip{font-family:var(--mono); font-size:.72rem; letter-spacing:.14em; color:var(--muted);
+    text-align:center; padding:.35rem 0; background:var(--card-2)}
+  .flowchip span{color:var(--accent)}
+
+  /* ---------- table ---------- */
+  .tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:6px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; min-width:640px; font-size:.92rem}
+  thead th{background:var(--accent-deep); color:#EAF4F4; text-align:left; font-weight:600;
+    padding:.7rem 1rem; letter-spacing:.03em; font-size:.82rem}
+  tbody td{padding:.75rem 1rem; border-top:1px solid var(--line-soft); vertical-align:top; color:var(--ink-soft)}
+  tbody td:first-child{color:var(--ink); font-weight:700; white-space:nowrap}
+  tbody tr:nth-child(even){background:var(--card-2)}
+  .need{font-family:var(--mono); font-size:.74rem; padding:.1rem .45rem; border-radius:2px}
+  .need.req{background:var(--ref-t); color:var(--ref)}
+  .need.have{background:var(--vent-t); color:var(--vent)}
+  .origin{font-family:var(--mono); font-size:.72rem; padding:.12rem .5rem; border-radius:2px; white-space:nowrap}
+  .origin.base{background:#EAEFF0; color:#556; border:1px solid #D3DAD8}
+  .origin.fork{background:var(--accent-tint); color:var(--accent-deep); border:1px solid var(--accent)}
+  td .mono{font-family:var(--mono); font-size:.86em; color:var(--accent-deep)}
+
+  /* ---------- sub-heading inside a section ---------- */
+  .subhead{font-size:clamp(1.08rem,1.9vw,1.28rem); font-weight:700; margin:2.4rem 0 .5rem;
+    display:flex; align-items:center; gap:.55rem}
+  .subhead::before{content:""; width:.6rem; height:.6rem; background:var(--accent); border-radius:1px; flex:none}
+  .subnote{color:var(--ink-soft); font-size:.92rem; margin:0 0 1.1rem; max-width:64ch}
+
+  /* ---------- tool cards ---------- */
+  .tools{display:flex; flex-direction:column; gap:1.15rem}
+  .tool{background:var(--card); border:1px solid var(--line); border-radius:6px; overflow:hidden}
+  .tool > .head{display:flex; align-items:baseline; gap:.8rem; flex-wrap:wrap;
+    padding:1rem 1.25rem; border-bottom:1px solid var(--line-soft); border-left:4px solid var(--c,var(--accent))}
+  .tool .fn{font-family:var(--mono); font-size:.98rem; font-weight:700; color:var(--ink)}
+  .tool .kind{font-family:var(--mono); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .tool .oneline{font-size:.9rem; color:var(--ink-soft); width:100%; margin-top:.15rem}
+  .tool .body{display:grid; grid-template-columns:1fr 1fr; gap:0}
+  @media(max-width:720px){.tool .body{grid-template-columns:1fr}}
+  .cell{padding:1rem 1.25rem; border-top:1px solid var(--line-soft)}
+  .cell.full{grid-column:1/-1}
+  .cell + .cell{border-left:1px solid var(--line-soft)}
+  @media(max-width:720px){.cell + .cell{border-left:0}}
+  .cell h5{font-family:var(--mono); font-size:.72rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 .55rem}
+  .cell ul{margin:0; padding-left:1.1rem}
+  .cell li{margin-bottom:.35rem; font-size:.92rem; color:var(--ink-soft)}
+  .cell li b{color:var(--ink)}
+  .steps{list-style:none; margin:0; padding:0; counter-reset:s}
+  .steps li{position:relative; padding-left:1.9rem; margin-bottom:.5rem; font-size:.92rem; color:var(--ink-soft)}
+  .steps li::before{counter-increment:s; content:counter(s); position:absolute; left:0; top:.05rem;
+    font-family:var(--mono); font-size:.72rem; color:#fff; background:var(--c,var(--accent));
+    width:1.3rem; height:1.3rem; border-radius:50%; display:grid; place-items:center}
+  .cfg{font-family:var(--mono); font-size:.8rem; line-height:1.65; color:var(--ink-soft)}
+  .cfg b{color:var(--ink)}
+
+  /* ---------- principle blocks ---------- */
+  .grid2{display:grid; grid-template-columns:repeat(2,1fr); gap:1rem}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  .pcard{background:var(--card); border:1px solid var(--line); border-radius:5px; padding:1.1rem 1.2rem}
+  .pcard h4{font-size:1rem; display:flex; align-items:center; gap:.5rem; margin-bottom:.4rem}
+  .pcard h4 .b{font-family:var(--mono); font-size:.7rem; color:var(--accent); border:1px solid var(--accent-tint);
+    background:var(--accent-tint); padding:.1rem .4rem; border-radius:2px}
+  .pcard p{font-size:.9rem; color:var(--ink-soft); margin:0}
+
+  /* ---------- flow svg ---------- */
+  .figure{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:1.3rem; overflow-x:auto}
+  .figcap{font-family:var(--mono); font-size:.76rem; color:var(--muted); margin-top:.8rem; letter-spacing:.04em}
+  svg{display:block; max-width:100%; height:auto; margin:0 auto}
+
+  /* ---------- callout ---------- */
+  .note{display:grid; grid-template-columns:auto 1fr; gap:.9rem; background:var(--card-2);
+    border:1px solid var(--line); border-left:4px solid var(--amber); border-radius:5px; padding:1rem 1.2rem; margin-top:1.3rem}
+  .note .ic{font-family:var(--mono); font-weight:700; color:var(--amber)}
+  .note p{margin:0; font-size:.9rem; color:var(--ink-soft)}
+  .note b{color:var(--ink)}
+
+  footer{margin-top:3.5rem; border-top:1px solid var(--line); padding-top:1.4rem;
+    font-size:.82rem; color:var(--muted); font-family:var(--mono); letter-spacing:.03em}
+</style>
+
+<div class="wrap">
+
+  <!-- ================= HERO ================= -->
+  <header class="hero">
+    <div class="col">
+      <div class="kicker">Archicad 29 / Tapir Extension / MEP Auto-Routing</div>
+      <h1>Generate MEP piping<span> with a single click</span></h1>
+      <p class="lede">Select the fixtures, indoor/outdoor units, or ventilation equipment, then press one button in the Tapir palette. Behind the scenes, the tool computes slope, ceiling-void level, grid-parallel routing, and structural clash checks, and builds real MEP piping elements directly in the 3D model. This document explains "what is actually happening" for people who only use Archicad, not Python.</p>
+      <div class="hero-meta">
+        <span class="tag">Drainage piping</span>
+        <span class="tag">Refrigerant piping (AC)</span>
+        <span class="tag">Ventilation duct + hood</span>
+        <span class="tag">Grid-parallel routing</span>
+        <span class="tag">Based on SHASE-S 206</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="col">
+
+    <!-- ============== 0. Overview diagram (requirements + flow) ============== -->
+    <section id="overview">
+      <div class="eyebrow"><span class="num">00</span><span class="lbl">Overview</span></div>
+      <h2 class="title">What you need, and the workflow (at a glance)</h2>
+      <p class="intro measure">What to install (left) and the flow from setup to running the tool (right), summarized in one diagram. Each part is explained in more detail in the sections below.</p>
+      <div class="figure">
+        <svg viewBox="0 0 912 500" role="img" aria-label="Requirements and workflow overview">
+          <defs>
+            <marker id="ovarw" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 z" fill="#7C8A90"/>
+            </marker>
+          </defs>
+          <style>
+            #overview svg text{font-family:var(--sans)}
+            .ov-hd{fill:var(--ink);font-size:16px;font-weight:700}
+            .ov-il{fill:var(--ink);font-size:13px;font-weight:700}
+            .ov-is{fill:var(--ink-soft);font-size:11px}
+            .ov-tag{fill:var(--muted);font-size:11px}
+            .ov-tagr{fill:var(--accent-deep);font-size:11px;font-weight:700}
+            .ov-ti{fill:var(--ink);font-size:14px;font-weight:700}
+            .ov-su{fill:var(--ink-soft);font-size:11.5px}
+            .ov-cp{fill:#fff;font-size:12px;font-weight:700}
+            .ov-lg{fill:var(--ink-soft);font-size:11px}
+            .ov-bx{fill:#fff;stroke:var(--line);stroke-width:1.3}
+            .ov-fl{stroke:#7C8A90;stroke-width:1.6;fill:none;marker-end:url(#ovarw)}
+            .ov-mk{fill:var(--accent)}
+          </style>
+          <line x1="360" y1="28" x2="360" y2="472" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 4"/>
+
+          <rect class="ov-mk" x="24" y="28" width="10" height="16" rx="2"/>
+          <text class="ov-hd" x="42" y="42">What you need</text>
+
+          <rect class="ov-bx" x="24" y="60" width="312" height="56" rx="6"/>
+          <text class="ov-il" x="40" y="84">Archicad 29</text>
+          <text class="ov-is" x="40" y="102">The main modeling application</text>
+          <text class="ov-tagr" x="322" y="90" text-anchor="end">Required</text>
+
+          <rect class="ov-bx" x="24" y="124" width="312" height="56" rx="6"/>
+          <text class="ov-il" x="40" y="148">Tapir add-on (custom build)</text>
+          <text class="ov-is" x="40" y="166">.apx add-on with the MEP-generation commands</text>
+          <text class="ov-tagr" x="322" y="154" text-anchor="end">Required</text>
+
+          <rect class="ov-bx" x="24" y="188" width="312" height="56" rx="6"/>
+          <text class="ov-il" x="40" y="212">Python runtime (uv)</text>
+          <text class="ov-is" x="40" y="230">No manual setup — launched from a button</text>
+          <text class="ov-tagr" x="322" y="218" text-anchor="end">Required</text>
+
+          <rect class="ov-bx" x="24" y="252" width="312" height="56" rx="6"/>
+          <text class="ov-il" x="40" y="276">Auto-routing scripts</text>
+          <text class="ov-is" x="40" y="294">Drainage / refrigerant / duct + calculation engine</text>
+          <text class="ov-tagr" x="322" y="282" text-anchor="end">Required</text>
+
+          <rect class="ov-bx" x="24" y="316" width="312" height="56" rx="6"/>
+          <text class="ov-il" x="40" y="340">Helper scripts</text>
+          <text class="ov-is" x="40" y="358">MEP system color setup, pipe-shaft (PS) morph generator</text>
+          <text class="ov-tagr" x="322" y="346" text-anchor="end">Required</text>
+
+          <rect class="ov-bx" x="24" y="380" width="312" height="56" rx="6"/>
+          <text class="ov-il" x="40" y="404">Custom GDL part "Pipe Hood"</text>
+          <text class="ov-is" x="40" y="422">Exterior termination fitting for ventilation ducts</text>
+          <text class="ov-tag" x="322" y="410" text-anchor="end">Bundled</text>
+
+          <rect class="ov-bx" x="24" y="444" width="312" height="56" rx="6"/>
+          <text class="ov-il" x="40" y="468">Dedicated layers + system colors</text>
+          <text class="ov-is" x="40" y="486">*991–*994 / MEP system colors</text>
+          <text class="ov-tag" x="322" y="474" text-anchor="end">Automatic</text>
+
+          <rect class="ov-mk" x="384" y="28" width="10" height="16" rx="2"/>
+          <text class="ov-hd" x="402" y="42">Workflow</text>
+
+          <rect class="ov-bx" x="426" y="58" width="400" height="46" rx="7"/>
+          <text class="ov-ti" x="626" y="80" text-anchor="middle">① Setup (one time only)</text>
+          <text class="ov-su" x="626" y="96" text-anchor="middle">Install the add-on, configure MEP system colors</text>
+          <path class="ov-fl" d="M626,104 L626,124"/>
+
+          <rect class="ov-bx" x="426" y="124" width="400" height="46" rx="7"/>
+          <text class="ov-ti" x="626" y="146" text-anchor="middle">② Select the equipment</text>
+          <text class="ov-su" x="626" y="162" text-anchor="middle">Fixtures / AC units / ventilation (+ PS morph)</text>
+          <path class="ov-fl" d="M626,170 L626,190"/>
+
+          <rect class="ov-bx" x="426" y="190" width="400" height="76" rx="7"/>
+          <text class="ov-ti" x="626" y="210" text-anchor="middle">③ Auto-route one of three systems</text>
+          <rect x="440" y="222" width="120" height="32" rx="5" fill="#2F6DB5"/>
+          <text class="ov-cp" x="500" y="243" text-anchor="middle">Drainage</text>
+          <rect x="566" y="222" width="120" height="32" rx="5" fill="#C0632A"/>
+          <text class="ov-cp" x="626" y="243" text-anchor="middle">Refrigerant</text>
+          <rect x="692" y="222" width="120" height="32" rx="5" fill="#4C8A5B"/>
+          <text class="ov-cp" x="752" y="243" text-anchor="middle">Duct</text>
+          <path class="ov-fl" d="M626,266 L626,286"/>
+
+          <rect class="ov-bx" x="426" y="286" width="400" height="60" rx="7"/>
+          <text class="ov-ti" x="626" y="310" text-anchor="middle">④ Auto-generated — into each system's layer</text>
+          <text class="ov-su" x="626" y="330" text-anchor="middle">Grid-parallel routing, structural check, system color, 2D labels</text>
+          <path class="ov-fl" d="M626,346 L626,366"/>
+
+          <rect x="426" y="366" width="400" height="58" rx="7" fill="#fff" stroke="var(--accent)" stroke-width="2"/>
+          <text class="ov-ti" x="626" y="390" text-anchor="middle">⑤ Review</text>
+          <text class="ov-su" x="626" y="410" text-anchor="middle">Highlighted / color-coded display</text>
+
+          <rect x="426" y="460" width="12" height="12" fill="#2F6DB5"/>
+          <text class="ov-lg" x="444" y="470">Drainage = blue</text>
+          <rect x="596" y="460" width="12" height="12" fill="#C0632A"/>
+          <text class="ov-lg" x="614" y="470">Refrigerant = orange</text>
+          <rect x="758" y="460" width="12" height="12" fill="#4C8A5B"/>
+          <text class="ov-lg" x="776" y="470">Duct = light green</text>
+        </svg>
+        <p class="figcap">FIG.00 — What you need (left) and the workflow from setup to review (right)</p>
+      </div>
+    </section>
+
+    <!-- ============== 1. What is this ============== -->
+    <section id="what">
+      <div class="eyebrow"><span class="num">01</span><span class="lbl">Overview</span></div>
+      <h2 class="title">Select and click — three MEP systems, auto-routed</h2>
+      <p class="intro measure">Select the relevant equipment, then press the corresponding button in the Tapir palette. Behind the scenes, a route is calculated according to design standards and generated as real MEP piping elements in the model. Newly generated piping is highlighted in red for review, and nothing about the building itself is ever touched.</p>
+      <div class="sys3">
+        <div class="sys" style="--c:var(--drain)">
+          <div class="nm"><span class="dot"></span>Drainage auto-routing</div>
+          <p>Drops from each fixture below the floor, rises through a vertical riser inside the pipe shaft (PS), and continues underground to the discharge point. Slope is determined automatically from pipe diameter.</p>
+          <span class="sel">Select → fixtures (multiple) + a discharge-point marker</span>
+        </div>
+        <div class="sys" style="--c:var(--ref)">
+          <div class="nm"><span class="dot"></span>Refrigerant auto-routing</div>
+          <p>Runs horizontally through the ceiling void from indoor units (e.g. ceiling-cassette type) and rises directly under the outdoor unit. Generates a parallel pair of liquid and gas lines.</p>
+          <span class="sel">Select → indoor units (multiple) + an outdoor unit</span>
+        </div>
+        <div class="sys" style="--c:var(--vent)">
+          <div class="nm"><span class="dot"></span>Duct auto-routing</div>
+          <p>Runs a duct at a right angle from ventilation equipment to the nearest exterior wall, and automatically places an exterior hood there. Duct size is determined from airflow using the equal-friction method.</p>
+          <span class="sel">Select → ventilation equipment (+ exterior hood)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== 2. System architecture ============== -->
+    <section id="stack">
+      <div class="eyebrow"><span class="num">02</span><span class="lbl">Architecture</span></div>
+      <h2 class="title">What's running underneath the button</h2>
+      <p class="intro measure">Behind a single click there are five layers stacked on top of each other. Only the top layer, Archicad, is something the user directly interacts with — the four layers below it cooperate automatically.</p>
+      <div class="stack">
+        <div class="layer host">
+          <div class="idx">A</div>
+          <div><h4>Archicad 29</h4>
+          <div class="role">Where you work: <b>select equipment</b> and press a palette button here. The generated result is also displayed here.</div></div>
+        </div>
+        <div class="flowchip">▲ selection info / generation commands　<span>JSON API (127.0.0.1 : 19723)</span></div>
+        <div class="layer">
+          <div class="idx">B</div>
+          <div><h4>Tapir add-on (custom build)</h4>
+          <div class="role">A C++ add-on loaded into Archicad. Adds custom commands that <b>generate MEP piping</b> (such as <code>CreateMEPRoutes</code>) on top of the free, open-source Tapir add-on.</div></div>
+        </div>
+        <div class="flowchip">▲ command call (HTTP POST)</div>
+        <div class="layer">
+          <div class="idx">C</div>
+          <div><h4>Tapir palette + Python runtime (uv)</h4>
+          <div class="role">Each button registered on the palette launches its matching <b>Python script</b> via <code>uv run</code>. It's a single self-contained executable — nothing extra to install.</div></div>
+        </div>
+        <div class="flowchip">▲ scripted calculation → generated via the API</div>
+        <div class="layer">
+          <div class="idx">D</div>
+          <div><h4>Routing engine <code>mep_auto_route.py</code></h4>
+          <div class="role">The brain of the system. Reads the coordinates of the selected elements and computes <b>slope, level, grid-parallel routing, grouping, and structural checks</b> to decide the final route. Each button is a thin wrapper — all real logic lives here.</div></div>
+        </div>
+        <div class="flowchip">+ used as a terminal fitting</div>
+        <div class="layer gdl">
+          <div class="idx">G</div>
+          <div><h4>Custom GDL part "Pipe Hood"</h4>
+          <div class="role">Placed at the exterior end of a ventilation duct. <b>Round/rectangular shape, drop offset, and stainless finish</b> are all parametric. Placed automatically by the duct auto-routing tool.</div></div>
+        </div>
+      </div>
+
+      <!-- 2-a Tapir base vs custom-build feature list -->
+      <h3 class="subhead">Tapir add-on features — base vs. custom-built additions</h3>
+      <p class="subnote">Tapir is a free, open-source add-on. This tool <b>extends it with a custom build</b>, adding the commands needed to generate, color-code, and route the MEP systems. "Custom" in the table below marks what was added for this project.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Command / feature</th><th>What it does</th><th>Origin</th></tr></thead>
+          <tbody>
+            <tr><td>Selecting / reading elements</td><td><span class="mono">GetSelectedElements / GetElementsByType / Get3DBoundingBoxes / GetDetailsOfElements</span> — read selection, type, coordinates, and dimensions</td><td><span class="origin base">Base Tapir</span></td></tr>
+            <tr><td>Project info</td><td><span class="mono">GetStories / GetAttributesByType</span> — read stories, layers, building materials, pens, etc.</td><td><span class="origin base">Base Tapir</span></td></tr>
+            <tr><td>Highlight display</td><td><span class="mono">HighlightElements</span> — temporarily color elements for review (the model itself is unchanged)</td><td><span class="origin base">Base Tapir</span></td></tr>
+            <tr><td>Basic element creation</td><td><span class="mono">CreateMorphs / CreateTexts / CreateObjects / CreateZones</span> — morphs, text, objects, zones, etc.</td><td><span class="origin base">Base Tapir</span></td></tr>
+            <tr><td>MEP route generation <b>(core)</b></td><td><span class="mono">CreateMEPRoutes</span> — generates drainage / refrigerant / duct routes as real MEP piping elements (diameter, system name, target layer)</td><td><span class="origin fork">Custom</span></td></tr>
+            <tr><td>Reading MEP info</td><td><span class="mono">GetMEPElements / GetMEPPreferenceTables</span> — list existing MEP elements; look up the round-section table (diameter → referenceId)</td><td><span class="origin fork">Custom</span></td></tr>
+            <tr><td>Graphic override rule creation</td><td><span class="mono">CreateGraphicalOverrideRule / CreateGraphicalOverrideCombination / GetGraphicalOverrideRules</span> — create new override rules and combinations</td><td><span class="origin fork">Custom</span></td></tr>
+            <tr><td>MEP system colors</td><td><span class="mono">CreateMEPSystems</span> — create an MEP system per discipline with its own 3D material color and 2D pen</td><td><span class="origin fork">Custom</span></td></tr>
+            <tr><td>Reading pen colors</td><td><span class="mono">GetPens</span> — read every pen's RGB from the pen set (used to auto-pick the closest pen to a target color)</td><td><span class="origin fork">Custom</span></td></tr>
+            <tr><td>Layer assignment for labels</td><td><span class="mono">CreateTexts</span> extended with a <span class="mono">layerIndex</span> parameter — places 2D labels on each system's own layer</td><td><span class="origin fork">Custom</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 2-b Tapir execution flow (Python <-> Archicad) -->
+      <h3 class="subhead">Execution flow — Python and Archicad talking to each other</h3>
+      <p class="subnote">Pressing a button starts an automatic round trip of "query → compute → generate → verify" between Python and Archicad. The two sides talk over a <b>local JSON API (127.0.0.1:19723)</b>.</p>
+      <div class="figure">
+        <svg viewBox="0 0 900 472" role="img" aria-label="Execution flow between Tapir and Python (sequence diagram)">
+          <defs>
+            <marker id="ah2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 z" fill="#0F6E7A"/>
+            </marker>
+          </defs>
+          <style>
+            .sq-lane{fill:#F7F9F7;stroke:#0F6E7A;stroke-width:1.4}
+            .sq-hd{fill:#0A4E58}
+            .sq-hdt{font-family:var(--sans);fill:#EAF4F4;font-size:14px;font-weight:700}
+            .sq-life{stroke:#9FB6BC;stroke-width:1.4;stroke-dasharray:4 4}
+            .sq-msg{stroke:#0F6E7A;stroke-width:1.7;fill:none;marker-end:url(#ah2)}
+            .sq-t{font-family:var(--sans);fill:#16262E;font-size:12.5px}
+            .sq-b{font-family:var(--sans);fill:#16262E;font-size:12.5px;font-weight:700}
+            .sq-act{fill:#E1EEEF;stroke:#0A4E58;stroke-width:1.3}
+            .sq-num{font-family:var(--mono);fill:#0F6E7A;font-size:11px;font-weight:700}
+          </style>
+
+          <!-- lanes -->
+          <rect class="sq-lane" x="40"  y="40" width="360" height="414" rx="6"/>
+          <rect class="sq-lane" x="500" y="40" width="360" height="414" rx="6"/>
+          <rect class="sq-hd" x="40"  y="40" width="360" height="34" rx="6"/>
+          <rect class="sq-hd" x="500" y="40" width="360" height="34" rx="6"/>
+          <text class="sq-hdt" x="60"  y="62">Python (uv / mep_auto_route.py)</text>
+          <text class="sq-hdt" x="520" y="62">Archicad + Tapir add-on</text>
+
+          <!-- lifelines -->
+          <line class="sq-life" x1="220" y1="76" x2="220" y2="452"/>
+          <line class="sq-life" x1="680" y1="76" x2="680" y2="452"/>
+
+          <!-- ① start -->
+          <rect class="sq-act" x="86" y="90" width="268" height="30" rx="4"/>
+          <text class="sq-b" x="100" y="110">① Palette button → launched via uv run</text>
+
+          <!-- ② request -->
+          <text class="sq-num" x="232" y="150">② Query the selection</text>
+          <text class="sq-t"   x="232" y="166" font-size="11">GetSelectedElements / Get3DBoundingBoxes</text>
+          <line class="sq-msg" x1="220" y1="174" x2="678" y2="174"/>
+
+          <!-- ③ response -->
+          <text class="sq-num" x="668" y="196" text-anchor="end">③ Return coordinates, type, dimensions</text>
+          <line class="sq-msg" x1="680" y1="204" x2="222" y2="204"/>
+
+          <!-- ④ compute (python self) -->
+          <rect class="sq-act" x="66" y="222" width="308" height="46" rx="4"/>
+          <text class="sq-b" x="80" y="241">④ Compute the route</text>
+          <text class="sq-t" x="80" y="259" font-size="11">Slope, ceiling-void level, grid-parallel routing, grouping, structural check</text>
+
+          <!-- ⑤ request generate -->
+          <text class="sq-num" x="232" y="296">⑤ Send the generation command</text>
+          <text class="sq-t"   x="232" y="312" font-size="11">CreateMEPRoutes / CreateTexts …</text>
+          <line class="sq-msg" x1="220" y1="320" x2="678" y2="320"/>
+
+          <!-- ⑥ archicad self -->
+          <rect class="sq-act" x="506" y="338" width="348" height="46" rx="4"/>
+          <text class="sq-b" x="520" y="357">⑥ Generate piping + labels (one undo step)</text>
+          <text class="sq-t" x="520" y="375" font-size="11">Applies the target layer / MEP system (color)</text>
+
+          <!-- ⑦ response -->
+          <text class="sq-num" x="668" y="406" text-anchor="end">⑦ Return the new GUIDs and read-back coordinates</text>
+          <line class="sq-msg" x1="680" y1="414" x2="222" y2="414"/>
+
+          <!-- ⑧ verify+highlight request -->
+          <text class="sq-num" x="232" y="440">⑧ Verified → highlighted → done (reflected in the model)</text>
+          <line class="sq-msg" x1="220" y1="448" x2="678" y2="448"/>
+        </svg>
+        <p class="figcap">FIG.00 — Execution flow: Python (client) and Archicad + Tapir (server) exchange messages over the JSON API to generate the route</p>
+      </div>
+    </section>
+
+    <!-- ============== 3. Requirements ============== -->
+    <section id="need">
+      <div class="eyebrow"><span class="num">03</span><span class="lbl">Requirements</span></div>
+      <h2 class="title">What's already installed</h2>
+      <p class="intro measure">Everything below is <b>already installed and configured</b>. Use this as a checklist if you need to reproduce the setup on a new machine, or hand it off to someone else.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Item</th><th>Purpose</th><th>Location</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Archicad 29</td><td>The main application. Used for modeling; its MEP Modeler is the destination for generated piping.</td><td>Standard install</td><td><span class="need req">Required</span></td></tr>
+            <tr><td>Tapir add-on (custom build)</td><td>Extended build with the MEP-generation commands. Includes <code>CreateMEPRoutes</code> and others not present in stock Tapir.</td><td><code>…/Archicad 29/Add-Ons/TapirAddOn_AC29_Win.apx</code></td><td><span class="need req">Required</span></td></tr>
+            <tr><td>Tapir palette (custom scripts)</td><td>The mechanism that launches Python from each button. The buttons are backed by the scripts below.</td><td><code>…/Documents/Tapir/custom-scripts/</code></td><td><span class="need req">Required</span></td></tr>
+            <tr><td>Python runtime (uv)</td><td>Runs the scripts with zero manual setup — each script's header declares the environment it needs.</td><td><code>uv run --script</code></td><td><span class="need req">Required</span></td></tr>
+            <tr><td>Custom GDL "Pipe Hood"</td><td>Exterior termination fitting for ventilation ducts. Placed automatically by duct auto-routing.</td><td>Library (<code>SiteObjects/PipeHood</code>)</td><td><span class="need have">Bundled</span></td></tr>
+            <tr><td>System-specific layers (4)</td><td>Keeps generated elements separated by discipline. <code>*991 PS morphs</code> / <code>*992 drainage</code> / <code>*993 refrigerant</code> / <code>*994 duct</code>. Created automatically if missing.</td><td>Created automatically at run time</td><td><span class="need have">Automatic</span></td></tr>
+            <tr><td>Graphic-override rule (optional)</td><td>An optional setting to color-code only the piping when reviewing. Recommended for a persistent color scheme.</td><td>Created via the "Create override rule" palette button</td><td><span class="need have">Optional</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <div class="ic">!</div>
+        <p>A restart is only needed <b>after updating the Tapir add-on itself</b>: close Archicad, replace the <code>.apx</code>, then reopen. For normal day-to-day use (routing piping), no restart is needed — just press a palette button.</p>
+      </div>
+    </section>
+
+    <!-- ============== 4. Palette reference ============== -->
+    <section id="tools">
+      <div class="eyebrow"><span class="num">04</span><span class="lbl">Palette Reference</span></div>
+      <h2 class="title">What each button does</h2>
+      <p class="intro measure">The palette has six buttons. A typical drainage workflow is "Generate PS morph → (adjust its position) → Drainage auto-routing", followed by "Create override rule" / "Clear highlight" for review.</p>
+
+      <div class="tools">
+
+        <!-- PS morph generation -->
+        <div class="tool" style="--c:var(--drain)">
+          <div class="head">
+            <span class="fn">Generate PS morph</span><span class="kind">Drainage — preparation step</span>
+            <span class="oneline">Places a translucent morph at each pipe-shaft (PS) location, to serve as the riser's reference geometry.</span>
+          </div>
+          <div class="body">
+            <div class="cell"><h5>What to select</h5>
+              <ul>
+                <li><b>Select a PS zone</b> and run → generates at that exact location (most reliable)</li>
+                <li>No selection → auto-detects zones whose name contains <code>PS / DS / MB</code> (electrical "EPS" zones are excluded)</li>
+                <li>If the model has no zones, you may place a morph at least 2 m tall by hand instead</li>
+              </ul>
+            </div>
+            <div class="cell"><h5>What happens internally</h5>
+              <ol class="steps">
+                <li>Reads the zone's 3D bounding box</li>
+                <li>Groups by plan position (rounded to 0.5 m) and merges same-position PS shafts across stories into one continuous vertical morph</li>
+                <li>Extends down to the underground horizontal-run level, and slightly above the top</li>
+                <li>Skips positions that already overlap an existing morph on re-run</li>
+              </ol>
+            </div>
+            <div class="cell full"><h5>What to do next</h5>
+              <p class="cfg">Adjust the <b>position and size of the generated morph to match the real PS</b> → select the fixtures + the discharge-point marker → run "Drainage auto-routing". The riser will follow the adjusted morph's position.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drainage auto-routing -->
+        <div class="tool" style="--c:var(--drain)">
+          <div class="head">
+            <span class="fn">Drainage auto-routing</span><span class="kind">Drainage</span>
+            <span class="oneline">Fixture → drop below floor → grouped horizontal run → PS riser → underground → discharge point. Slope is set automatically from pipe diameter.</span>
+          </div>
+          <div class="body">
+            <div class="cell"><h5>What to select</h5>
+              <ul>
+                <li><b>Fixtures (any number)</b> — anything other than a morph is treated as a fixture</li>
+                <li><b>Discharge marker (one morph)</b> — the drainage outlet point; its bottom-face center defines both the point and its depth</li>
+              </ul>
+              <h5 style="margin-top:1rem">What gets generated</h5>
+              <ul><li>A drainage route as real MEP piping elements: Ø100 main / Ø75 branch</li></ul>
+            </div>
+            <div class="cell"><h5>What happens internally</h5>
+              <ol class="steps">
+                <li>Auto-classifies the selection: morph = discharge point, everything else = fixture</li>
+                <li>Drops each fixture below the floor by <code>drop</code> (default 0.5 m)</li>
+                <li>Groups fixtures on the same story within 4 m into a single horizontal run</li>
+                <li>Chooses the riser position, preferring a PS-range morph, then a PS zone, then a direct connection</li>
+                <li>Sets a downward slope automatically from pipe diameter per SHASE-S 206</li>
+                <li>Checks whether beam / slab penetrations are structurally valid</li>
+              </ol>
+            </div>
+            <div class="cell full"><h5>Key settings (CONFIG)</h5>
+              <p class="cfg"><b>diameter</b> 0.1 (Ø100 main) / <b>branch_diameter</b> 0.075 (Ø75 branch) / <b>slope</b> auto (linked to diameter) or a fixed value e.g. 100 for 1/100 / <b>drop</b> 0.5 / <b>group_distance</b> 4.0 m / <b>ps_mode</b> morph (prefer the range morph) / <b>check_structure</b> True</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Refrigerant auto-routing -->
+        <div class="tool" style="--c:var(--ref)">
+          <div class="head">
+            <span class="fn">Refrigerant auto-routing</span><span class="kind">Refrigerant / HVAC</span>
+            <span class="oneline">Indoor unit → routed through the ceiling void → rises directly under the outdoor unit. Generates a parallel pair of liquid and gas lines.</span>
+          </div>
+          <div class="body">
+            <div class="cell"><h5>What to select</h5>
+              <ul>
+                <li><b>Indoor units (objects, any number, across multiple stories)</b></li>
+                <li><b>Outdoor units (morphs, any number)</b></li>
+              </ul>
+              <h5 style="margin-top:1rem">What gets generated</h5>
+              <ul><li>A parallel pair: liquid line (Ø9.52) + gas line (Ø15.88)</li></ul>
+            </div>
+            <div class="cell"><h5>What happens internally</h5>
+              <ol class="steps">
+                <li>Classifies objects as indoor units and morphs as outdoor units</li>
+                <li>Assigns each indoor unit to its nearest outdoor unit</li>
+                <li>Groups nearby indoor units on the same story (default within 8 m) into one main line</li>
+                <li>Runs through the ceiling void (indoor-unit top + 0.3 m), grid-parallel</li>
+                <li>Drops into a vertical shaft directly under the outdoor unit and connects</li>
+                <li>Estimates equivalent length and warns if it exceeds the chargeless or maximum piping length</li>
+              </ol>
+            </div>
+            <div class="cell full"><h5>Key settings (CONFIG)</h5>
+              <p class="cfg"><b>gas</b> 0.0159 / <b>liquid</b> 0.0095 (typical for a P80-class unit) / <b>gap</b> 0.06 (spacing between the two lines) / <b>clearance</b> 0.3 (ceiling-void height) / <b>group_distance</b> 8.0 m (fits a 6 m structural grid) / <b>chargeless</b> 20 · <b>max_length</b> 50 (adjust per equipment model)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Duct auto-routing -->
+        <div class="tool" style="--c:var(--vent)">
+          <div class="head">
+            <span class="fn">Duct auto-routing</span><span class="kind">Duct / Ventilation</span>
+            <span class="oneline">Ventilation equipment → routed at a right angle to the nearest exterior wall → an exterior hood is placed automatically.</span>
+          </div>
+          <div class="body">
+            <div class="cell"><h5>What to select</h5>
+              <ul>
+                <li><b>Ventilation equipment</b> (selecting the equipment alone is enough in exterior-termination mode)</li>
+                <li>To connect two pieces of equipment, select <b>the equipment + an exterior hood</b></li>
+              </ul>
+              <h5 style="margin-top:1rem">What gets generated</h5>
+              <ul><li>Round or rectangular duct + an exterior-wall pipe hood (GDL part)</li></ul>
+            </div>
+            <div class="cell"><h5>What happens internally</h5>
+              <ol class="steps">
+                <li>Routes horizontally at the ceiling-void level (equipment top + 0.15 m)</li>
+                <li>From each unit, exits at a right angle through the nearest exterior wall</li>
+                <li>Places a pipe hood on the exterior face, facing outward</li>
+                <li>When airflow is given, sizes the duct automatically with the equal-friction method (1.0 Pa/m, velocity ≤ 10 m/s, aspect ratio ≤ 4)</li>
+                <li>Avoids beam/slab penetration issues and clashes with other systems or lighting</li>
+              </ol>
+            </div>
+            <div class="cell full"><h5>Key settings (CONFIG)</h5>
+              <p class="cfg"><b>exterior_hood</b> True (exterior-termination mode) / <b>hood_round</b> True (round hood) / <b>flow</b> (airflow in m³/h — sizes automatically when given) / <b>diameter</b> 0.15 (default Ø150) / <b>clearance</b> 0.15 (use a smaller value where the ceiling void is shallow)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Create override rule -->
+        <div class="tool" style="--c:var(--accent)">
+          <div class="head">
+            <span class="fn">Create override rule</span><span class="kind">Review helper</span>
+            <span class="oneline">Batch-creates a "graphic override" rule and combination that displays only the piping in red.</span>
+          </div>
+          <div class="body">
+            <div class="cell"><h5>What it does</h5>
+              <ul>
+                <li>Creates an override rule named <b>"MEP Piping — Red"</b> inside the "Tapir" rule group</li>
+                <li>Creates and registers an override combination named <b>"MEP Review"</b></li>
+              </ul>
+            </div>
+            <div class="cell"><h5>One-time manual setup</h5>
+              <ol class="steps">
+                <li>Document > Graphic Overrides > Graphic Override Rules</li>
+                <li>Set the <b>condition</b> for "MEP Piping — Red" (e.g., layer is a piping layer)</li>
+                <li>From then on, just select "MEP Review" in the 3D view to show only the piping in red</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clear highlight -->
+        <div class="tool" style="--c:var(--muted)">
+          <div class="head">
+            <span class="fn">Clear highlight</span><span class="kind">Reset display</span>
+          </div>
+          <div class="body">
+            <div class="cell full"><h5>When to use it</h5>
+              <p class="cfg">Right after auto-routing, the new piping is <b>highlighted in red</b> for easy review (the model's actual color is unchanged). Once you're done checking, use this button to return to the normal display. For a persistent color scheme, use "Create override rule" instead.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============== 4.5 Color coding ============== -->
+    <section id="color">
+      <div class="eyebrow"><span class="num">05</span><span class="lbl">Color Coding</span></div>
+      <h2 class="title">Telling systems apart by color</h2>
+      <p class="intro measure">Color coding is done through Archicad's native <b>MEP System</b> feature. Each discipline is assigned its own MEP system, which carries a "3D material color" and a "2D pen color". Because the system is set at generation time, the piping is <b>always color-coded in 2D, 3D, and on drawings</b> — no need to switch a graphic override per view.</p>
+      <div class="sys3">
+        <div class="sys" style="--c:var(--drain)"><div class="nm"><span class="dot"></span>Drainage = blue</div><p>MEP system "Drainage". 3D material = blue, 2D = the closest blue pen.</p></div>
+        <div class="sys" style="--c:var(--ref)"><div class="nm"><span class="dot"></span>Refrigerant = orange</div><p>MEP system "Refrigerant". 3D material = orange, 2D = the closest orange pen.</p></div>
+        <div class="sys" style="--c:var(--vent)"><div class="nm"><span class="dot"></span>Duct = light green</div><p>MEP system "Ventilation". 3D material = light green, 2D = the closest light-green pen.</p></div>
+      </div>
+      <div class="tool" style="--c:var(--accent); margin-top:1.15rem">
+        <div class="head"><span class="fn">Set up MEP system colors</span><span class="kind">One-time setup</span>
+          <span class="oneline">A palette button that creates the three MEP systems and sets their 3D material color and 2D pen.</span></div>
+        <div class="body">
+          <div class="cell"><h5>What happens internally</h5>
+            <ol class="steps" style="--c:var(--accent)">
+              <li>Creates the surface materials for each system color (blue / orange / light green) and reads their index</li>
+              <li>Reads the pen set's RGB values via <code>GetPens</code> and auto-picks the <b>closest pen</b> to each color</li>
+              <li>Creates "Drainage / Refrigerant / Ventilation" via <code>CreateMEPSystems</code> (material + outline/centerline pens)</li>
+            </ol></div>
+          <div class="cell"><h5>Usage notes</h5>
+            <ul>
+              <li>Run once first — every auto-routed system afterward will be colored automatically</li>
+              <li><b>Existing piping keeps its previous color</b> (color is fixed at generation time); regenerate on the relevant layer if you want existing piping recolored too</li>
+              <li>This feature relies on newer add-on commands (<code>CreateMEPSystems</code> / <code>GetPens</code>), so it requires <b>one Archicad restart</b> after installing them</li>
+            </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== 6. How it works ============== -->
+    <section id="how">
+      <div class="eyebrow"><span class="num">06</span><span class="lbl">How it works</span></div>
+      <h2 class="title">Principles shared by all three systems</h2>
+      <p class="intro measure">Every button follows the same underlying flow. The rules a designer would apply on site are translated directly into the calculation.</p>
+      <div class="grid2">
+        <div class="pcard"><h4><span class="b">01</span>From selection to coordinates</h4><p>Reads each selected element's type (fixture / morph / object) and 3D bounding box, then auto-classifies it by role. Hit-testing never trusts the API blindly — it's verified against real coordinates.</p></div>
+        <div class="pcard"><h4><span class="b">02</span>Grid-parallel routing</h4><p>Diagonal runs are disallowed; every route is built from right-angle segments along the X and Y axes only. Horizontal runs are aligned to a single <b>ceiling-void level</b> (equipment top + clearance) and kept concealed.</p></div>
+        <div class="pcard"><h4><span class="b">03</span>Grouping and level management</h4><p>Nearby fixtures / indoor units on the same story are grouped into a single main line (4 m for drainage, 8 m for refrigerant). Concealment rules are respected — piping never drops below the ceiling, and never penetrates the slab above.</p></div>
+        <div class="pcard"><h4><span class="b">04</span>Structural check</h4><p>Beam penetrations are approximately validated against "opening diameter ≤ 1/3 of beam depth, within the middle third of the span, at least 1.2× the opening diameter from any column face" — following steel and RC penetration rules to avoid disallowed openings or column clashes.</p></div>
+        <div class="pcard"><h4><span class="b">05</span>Generated as real MEP elements</h4><p>The computed route is generated as an <b>actual Archicad MEP piping element</b> via the custom <code>CreateMEPRoutes</code> command. The system name and pipe diameter are also finalized here.</p></div>
+        <div class="pcard"><h4><span class="b">06</span>Automatic 2D labels</h4><p>At the same time, a 2D text label (e.g. "Drainage Ø100") is placed at the midpoint of each horizontal run on the relevant floor plan (risers are excluded, and nearby labels are thinned out). Labels are placed on <b>each system's own layer</b>, so they follow the same show/hide and drawing rules as the piping.</p></div>
+        <div class="pcard"><h4><span class="b">07</span>Review and redo freely</h4><p>Generated elements land on their own <b>discipline-specific layer</b> (drainage = *992, refrigerant = *993, duct = *994, PS morph = *991) and are highlighted. This makes it easy to show/hide by discipline. You're always free to delete and re-run — the building itself is never affected.</p></div>
+      </div>
+    </section>
+
+    <!-- ============== 7. Data flow diagram (drainage example) ============== -->
+    <section id="flow">
+      <div class="eyebrow"><span class="num">07</span><span class="lbl">Data Flow — Drainage example</span></div>
+      <h2 class="title">From button press to finished piping</h2>
+      <p class="intro measure">Using "Drainage auto-routing" as an example, here is the data flow from selection to generation. The other two systems follow the same overall shape — only the classification and route calculation differ.</p>
+      <div class="figure">
+        <svg viewBox="0 0 900 300" role="img" aria-label="Data flow diagram for drainage auto-routing">
+          <defs>
+            <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 z" fill="#0F6E7A"/>
+            </marker>
+            <style>
+              .bx{fill:#fff;stroke:#0F6E7A;stroke-width:1.5;rx:6}
+              .bxd{fill:#E5EDF7;stroke:#2F6DB5;stroke-width:1.5}
+              .bxe{fill:#E1EEEF;stroke:#0A4E58;stroke-width:1.5}
+              .t{font-family:var(--sans);fill:#16262E;font-size:14px;font-weight:700}
+              .s{font-family:var(--sans);fill:#43555C;font-size:11.5px}
+              .lbl{font-family:var(--mono);fill:#7A888E;font-size:10px;letter-spacing:.1em}
+              .ln{stroke:#0F6E7A;stroke-width:1.6;fill:none;marker-end:url(#ah)}
+            </style>
+          </defs>
+
+          <!-- row 1 -->
+          <rect class="bxd" x="18"  y="30" width="180" height="66" rx="6"/>
+          <text class="t" x="34" y="58">① Select in Archicad</text>
+          <text class="s" x="34" y="78">Fixtures + discharge marker</text>
+
+          <rect class="bx" x="238" y="30" width="180" height="66" rx="6"/>
+          <text class="t" x="254" y="58">② Run from palette</text>
+          <text class="s" x="254" y="78">"Drainage auto-routing" button</text>
+
+          <rect class="bx" x="458" y="30" width="180" height="66" rx="6"/>
+          <text class="t" x="474" y="53">③ Read the selection</text>
+          <text class="s" x="474" y="72">GetSelectedElements</text>
+          <text class="s" x="474" y="88">+ 3D BBox / type</text>
+
+          <rect class="bx" x="678" y="30" width="200" height="66" rx="6"/>
+          <text class="t" x="694" y="53">④ Classify</text>
+          <text class="s" x="694" y="72">Morph = discharge point</text>
+          <text class="s" x="694" y="88">Everything else = fixture</text>
+
+          <!-- arrows row1 -->
+          <path class="ln" d="M198,63 L236,63"/>
+          <path class="ln" d="M418,63 L456,63"/>
+          <path class="ln" d="M638,63 L676,63"/>
+
+          <!-- down arrow -->
+          <path class="ln" d="M778,96 L778,150"/>
+          <text class="lbl" x="792" y="126">to calculation</text>
+
+          <!-- row 2 (right to left) -->
+          <rect class="bx" x="678" y="150" width="200" height="76" rx="6"/>
+          <text class="t" x="694" y="176">⑤ Compute the route</text>
+          <text class="s" x="694" y="195">Drop below floor, group</text>
+          <text class="s" x="694" y="211">PS riser, auto slope</text>
+
+          <rect class="bx" x="458" y="150" width="180" height="76" rx="6"/>
+          <text class="t" x="474" y="176">⑥ Structural check</text>
+          <text class="s" x="474" y="195">Beam-penetration validity</text>
+          <text class="s" x="474" y="211">Slab-penetration check</text>
+
+          <rect class="bxe" x="238" y="150" width="180" height="76" rx="6"/>
+          <text class="t" x="254" y="176">⑦ Generate piping</text>
+          <text class="s" x="254" y="195">CreateMEPRoutes</text>
+          <text class="s" x="254" y="211">→ real MEP element</text>
+
+          <rect class="bxd" x="18" y="150" width="180" height="76" rx="6"/>
+          <text class="t" x="34" y="176">⑧ Result shown</text>
+          <text class="s" x="34" y="195">Placed on the *992 layer</text>
+          <text class="s" x="34" y="211">Highlighted in red</text>
+
+          <!-- arrows row2 -->
+          <path class="ln" d="M678,188 L640,188"/>
+          <path class="ln" d="M458,188 L420,188"/>
+          <path class="ln" d="M238,188 L200,188"/>
+
+          <text class="lbl" x="474" y="262">Engine: mep_auto_route.py (the brain)</text>
+          <text class="lbl" x="34"  y="262">Reaches Archicad via the Tapir extension commands</text>
+        </svg>
+        <p class="figcap">FIG.01 — Drainage auto-routing: select → classify → compute route → structural check → generate MEP element → review</p>
+      </div>
+    </section>
+
+    <!-- ============== 8. Design basis ============== -->
+    <section id="basis">
+      <div class="eyebrow"><span class="num">08</span><span class="lbl">Design Basis</span></div>
+      <h2 class="title">The design standards behind the automatic decisions</h2>
+      <p class="intro measure">"Automatic" here means the following real-world engineering standards. The numbers aren't arbitrary — each is computed from a documented basis.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Item</th><th>Standard / basis</th><th>How the tool applies it</th></tr></thead>
+          <tbody>
+            <tr><td>Drainage slope</td><td>Based on SHASE-S 206 (Ø65 or smaller → 1/50, Ø75/100 → 1/100, Ø125 → 1/150, Ø150 or larger → 1/200)</td><td><code>slope auto</code> derives it from pipe diameter</td></tr>
+            <tr><td>Duct sizing</td><td>Equal-friction method, 1.0 Pa/m, velocity ≤ 10 m/s, aspect ratio ≤ 4 (per a building-services design standard)</td><td>Auto-sized when airflow (<code>flow</code>) is specified</td></tr>
+            <tr><td>Refrigerant pipe length</td><td>Equivalent length = actual length + 0.3 m per bend. Checked against chargeless length and maximum piping length (per equipment specification)</td><td>Warns when the limit is exceeded</td></tr>
+            <tr><td>Beam penetration</td><td>Opening diameter ≤ 1/3 beam depth, within the middle third of the span, ≥ 1.2× the opening diameter from any column face (steel / RC penetration rules)</td><td>Approximated by <code>check_structure</code></td></tr>
+            <tr><td>Concealed routing</td><td>Route horizontally through the ceiling void, never below the ceiling, never through the slab above</td><td>Enforced by the horizontal-run level and route logic</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <div class="ic">i</div>
+        <p>Detailed notes on the basis for each standard are kept in the internal knowledge base (the "MEP design standards" note set). Adjust the <b>CONFIG</b> values on each button to match a specific project's slope, diameter, or grouping distance.</p>
+      </div>
+    </section>
+
+    <footer>
+      Archicad 29 / Tapir custom build + Python palette / MEP auto-routing tool overview — internal technical documentation
+    </footer>
+
+  </div>
+</div>
+
+</body>
+</html>
