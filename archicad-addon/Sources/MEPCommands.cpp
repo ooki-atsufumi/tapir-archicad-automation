@@ -23,7 +23,6 @@
 #include "ACAPI/MEPDuctCircularSegmentPreferenceTable.hpp"
 #include "ACAPI/MEPDuctSegmentPreferenceTableContainer.hpp"
 
-#include "ACAPI/MEPUniqueID.hpp"
 #include "ACAPI/MEPPipeSegmentPreferenceTable.hpp"
 #include "ACAPI/MEPPipeSegmentPreferenceTableContainer.hpp"
 #include "ACAPI/MEPDuctCircularSegmentPreferenceTable.hpp"
@@ -1281,7 +1280,7 @@ static GSErrCode SetLayerOfElement (const API_Guid& elemGuid, const API_Attribut
 
 // ルーティング要素本体とサブ要素(剛管・エルボ・継手)のレイヤを一括変更する。
 // コンテナ本体への Element_Change は効かないことがあるため、ジオメトリを持つサブ要素にも適用する。
-static void SetLayerOfRoute (const UniqueID& routeId, const API_AttributeIndex& layerIndex)
+static void SetLayerOfRoute (const ACAPI::MEP::UniqueID& routeId, const API_AttributeIndex& layerIndex)
 {
     GSErrCode err = ACAPI_CallUndoableCommand ("Set MEP route layer", [&] () -> GSErrCode {
         SetLayerOfElement (GSGuid2APIGuid (routeId.GetGuid ()), layerIndex);
@@ -1289,23 +1288,23 @@ static void SetLayerOfRoute (const UniqueID& routeId, const API_AttributeIndex& 
         if (route.IsErr ()) {
             return NoError;
         }
-        for (const UniqueID& segId : route->GetRoutingSegmentIds ()) {
+        for (const auto& segId : route->GetRoutingSegmentIds ()) {
             SetLayerOfElement (GSGuid2APIGuid (segId.GetGuid ()), layerIndex);
             auto segment = RoutingSegment::Get (segId);
             if (segment.IsOk ()) {
-                for (const UniqueID& rigidId : segment->GetRigidSegmentIds ()) {
+                for (const auto& rigidId : segment->GetRigidSegmentIds ()) {
                     SetLayerOfElement (GSGuid2APIGuid (rigidId.GetGuid ()), layerIndex);
                 }
             }
         }
-        for (const UniqueID& nodeId : route->GetRoutingNodeIds ()) {
+        for (const auto& nodeId : route->GetRoutingNodeIds ()) {
             SetLayerOfElement (GSGuid2APIGuid (nodeId.GetGuid ()), layerIndex);
             auto routingNode = RoutingNode::Get (nodeId);
             if (routingNode.IsOk ()) {
-                for (const UniqueID& elbowId : routingNode->GetElbowIds ()) {
+                for (const auto& elbowId : routingNode->GetElbowIds ()) {
                     SetLayerOfElement (GSGuid2APIGuid (elbowId.GetGuid ()), layerIndex);
                 }
-                for (const UniqueID& transitionId : routingNode->GetTransitionIds ()) {
+                for (const auto& transitionId : routingNode->GetTransitionIds ()) {
                     SetLayerOfElement (GSGuid2APIGuid (transitionId.GetGuid ()), layerIndex);
                 }
             }
@@ -1342,20 +1341,20 @@ static bool FindMEPSystemIndexByName (const GS::UniString& systemName, API_Attri
 // another table of the domain container, that table is assigned to the segment default first.
 static bool ResolveCircularReferenceId (Domain domain, RoutingElementDefault& routingElementDefault, double diameter, UInt32& outReferenceId)
 {
-    std::vector<UniqueID> tableIds;
+    std::vector<ACAPI::MEP::UniqueID> tableIds;
     tableIds.push_back (routingElementDefault.GetRoutingSegmentDefault ().GetPreferenceTableId ());
 
     if (domain == Domain::Piping) {
         auto container = GetPipeSegmentPreferenceTableContainer ();
         if (container.IsOk ()) {
-            for (const UniqueID& id : container->GetPreferenceTables ()) {
+            for (const auto& id : container->GetPreferenceTables ()) {
                 tableIds.push_back (id);
             }
         }
     } else if (domain == Domain::Ventilation) {
         auto container = GetDuctSegmentPreferenceTableContainer ();
         if (container.IsOk ()) {
-            for (const UniqueID& id : container->GetPreferenceTables ()) {
+            for (const auto& id : container->GetPreferenceTables ()) {
                 tableIds.push_back (id);
             }
         }
@@ -1400,7 +1399,7 @@ static bool ResolveCircularReferenceId (Domain domain, RoutingElementDefault& ro
     // ツール既定が別システム(暖房DN25等)のままでも確実に効くよう、断面形状・テーブル・行を
     // セグメント既定値に直接書き込む(Placeの断面マップと二重で適用)
     RoutingSegmentDefault segmentDefault = routingElementDefault.GetRoutingSegmentDefault ();
-    const UniqueID tableId = tableIds[bestTableIndex];
+    const ACAPI::MEP::UniqueID tableId = tableIds[bestTableIndex];
     const UInt32 referenceId = bestReferenceId;
     auto modifyResult = segmentDefault.Modify ([&] (RoutingSegmentDefault::Modifier& modifier) -> ACAPI::Result<void> {
         auto shapeResult = modifier.SetCrossSectionShape (ConnectorShape::Circular);
