@@ -16,6 +16,13 @@ enum class CommonSchema
     NotUsed
 };
 
+// Startup diagnostic log: appends to %TEMP%/tapir_boot.log. Called from the startup paths
+// only (CheckEnvironment / RegisterInterface / Initialize / command registration), so it has
+// no per-command runtime cost. A registration that fails here (reg end: err!=0) corrupts
+// Archicad's add-on command registry and crashes the process on the FIRST ExecuteAddOnCommand
+// with no visible error anywhere else - this log is the only way to see it.
+void TapirBootLog (const char* fmt, ...);
+
 class CommandBase : public API_AddOnCommand
 {
 public:
