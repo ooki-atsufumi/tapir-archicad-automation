@@ -49,6 +49,7 @@ template <typename CommandType>
 GSErrCode RegisterCommand (CommandGroup& group, const GS::UniString& version, const GS::UniString& description)
 {
     GS::Owner<CommandType> command = GS::NewOwned<CommandType> ();
+    TapirBootLog ("reg begin: %s", command->GetName ().ToCStr ());
     group.commands.push_back (CommandInfo (
         command->GetName (),
         description,
@@ -58,6 +59,7 @@ GSErrCode RegisterCommand (CommandGroup& group, const GS::UniString& version, co
     );
 
     GSErrCode err = ACAPI_AddOnAddOnCommunication_InstallAddOnCommandHandler (command.Pass ());
+    TapirBootLog ("reg end: err=%d", static_cast<int> (err));
     if (err != NoError) {
         return err;
     }
@@ -129,15 +131,18 @@ static GSErrCode MenuCommandHandler (const API_MenuParams* menuParams)
 
 API_AddonType CheckEnvironment (API_EnvirParams* envir)
 {
+    TapirBootLog ("CheckEnvironment begin");
     RSGetIndString (&envir->addOnInfo.name, ID_ADDON_INFO, ID_ADDON_INFO_NAME, ACAPI_GetOwnResModule ());
     RSGetIndString (&envir->addOnInfo.description, ID_ADDON_INFO, ID_ADDON_INFO_DESC, ACAPI_GetOwnResModule ());
     envir->addOnInfo.description += GS::UniString (" ") + ADDON_VERSION;
     VersionChecker::CreateInstance (envir->serverInfo.mainVersion);
+    TapirBootLog ("CheckEnvironment end");
     return APIAddon_Preload;
 }
 
 GSErrCode RegisterInterface (void)
 {
+    TapirBootLog ("RegisterInterface begin");
     GSErrCode err = NoError;
 
     err |= ACAPI_MenuItem_RegisterMenu (ID_ADDON_MENU_FOR_PALETTE, 0, MenuCode_UserDef, MenuFlag_Default);
@@ -156,6 +161,7 @@ GSErrCode RegisterInterface (void)
 
 GSErrCode Initialize (void)
 {
+    TapirBootLog ("Initialize begin");
     GSErrCode err = NoError;
 
     err |= ACAPI_MenuItem_InstallMenuHandler (ID_ADDON_MENU_FOR_PALETTE, MenuCommandHandler);
@@ -1324,17 +1330,21 @@ GSErrCode Initialize (void)
     // Add-On Manager and its menu worked - see #516. Registering the commands first makes that
     // failure mode impossible; if the palette cannot be created this early, the shortcut labels
     // are applied later, the first time the palette is actually used.
+    TapirBootLog ("Initialize: before TapirPalette::Instance");
     try {
         TapirPalette::Instance ();
     } catch (...) {
         // Intentionally ignored: the menu labels are cosmetic, the commands above are not.
+        TapirBootLog ("Initialize: TapirPalette::Instance threw");
     }
+    TapirBootLog ("Initialize end: err=%d", static_cast<int> (err));
 
     return err;
 }
 
 GSErrCode FreeData (void)
 {
+    TapirBootLog ("FreeData begin");
     // Must run here, not left to the static GS::Ref's destructor at DLL/dylib unload time - see
     // ScriptUIPalette::Release for why (real macOS crash on quit, EXC_BAD_ACCESS tearing down the
     // browser control after Archicad's own environment had already begun shutting down).
