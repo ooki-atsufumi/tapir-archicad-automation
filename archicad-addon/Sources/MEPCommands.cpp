@@ -1528,7 +1528,7 @@ GS::Optional<GS::UniString> CreateMEPRoutesCommand::GetInputParametersSchema () 
     })";
 }
 
-GS::Optional<GS::UniString> CreateMEPRoutesCommand::GetResponseSchema () const
+GS::Optional<GS::UniString> CreateMEPRoutesCommand::GetRawResponseSchema () const
 {
     return R"({
         "type": "object",
@@ -1718,7 +1718,7 @@ GS::Optional<GS::UniString> SetElementsLayerCommand::GetInputParametersSchema ()
     })";
 }
 
-GS::Optional<GS::UniString> SetElementsLayerCommand::GetResponseSchema () const
+GS::Optional<GS::UniString> SetElementsLayerCommand::GetRawResponseSchema () const
 {
     return R"({
         "type": "object",
