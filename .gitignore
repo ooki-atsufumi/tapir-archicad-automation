@@ -141,3 +141,4 @@ grasshopper-plugin/src/test.py
 .vscode
 .lck
 /.vs
+archicad-addon/Build*/
