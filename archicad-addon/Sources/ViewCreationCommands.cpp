@@ -107,7 +107,7 @@ GS::Optional<GS::UniString> CreateViewsFromStoriesCommand::GetInputParametersSch
     })";
 }
 
-GS::Optional<GS::UniString> CreateViewsFromStoriesCommand::GetResponseSchema () const
+GS::Optional<GS::UniString> CreateViewsFromStoriesCommand::GetRawResponseSchema () const
 {
     return R"({
         "type": "object",
@@ -118,8 +118,7 @@ GS::Optional<GS::UniString> CreateViewsFromStoriesCommand::GetResponseSchema () 
                     "type": "object",
                     "properties": {
                         "viewName": { "type": "string" },
-                        "navigatorItemId": { "$ref": "#/NavigatorItemId" }
-                    },
+                        "navigatorItemId": { "$ref": "#/NavigatorItemId" },
                         "error": { "type": "string" }
                     },
                     "required": ["viewName"],
