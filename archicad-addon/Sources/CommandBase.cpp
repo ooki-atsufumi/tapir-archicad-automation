@@ -4,9 +4,47 @@
 #include "MigrationHelper.hpp"
 
 #include <cmath>
+#include <cstdio>
+#include <cstdarg>
+#include <cstdlib>
+#include <ctime>
+#include <string>
 
 constexpr double EPS = 0.001;
 constexpr const char* CommandNamespace = "TapirCommand";
+
+// Boot diagnostic: appends one line per call to %TEMP%/tapir_boot.log. Only called from
+// startup paths (CheckEnvironment / RegisterInterface / Initialize), so there is no
+// per-command runtime cost. Each line is open/write/close so the log survives a crash -
+// this is how a silent InstallAddOnCommandHandler failure (which corrupts Archicad's
+// command registry and crashes the process on the FIRST ExecuteAddOnCommand) was found.
+void TapirBootLog (const char* fmt, ...)
+{
+    static std::string logPath = [] () -> std::string {
+        char* temp = nullptr;
+        size_t len = 0;
+        if (_dupenv_s (&temp, &len, "TEMP") != 0 || temp == nullptr) {
+            return {};
+        }
+        std::string path = std::string (temp) + "\\tapir_boot.log";
+        free (temp);
+        return path;
+    } ();
+    if (logPath.empty ()) {
+        return;
+    }
+    FILE* f = nullptr;
+    if (fopen_s (&f, logPath.c_str (), "ab") != 0 || f == nullptr) {
+        return;
+    }
+    fprintf (f, "%lu ", static_cast<unsigned long> (clock ()));
+    va_list args;
+    va_start (args, fmt);
+    vfprintf (f, fmt, args);
+    va_end (args);
+    fprintf (f, "\r\n");
+    fclose (f);
+}
 
 CommandBase::CommandBase (CommonSchema commonSchema) :
     mCommonSchema (commonSchema)
