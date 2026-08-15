@@ -5220,7 +5220,7 @@ GS::String GetPensCommand::GetName () const
     return "GetPens";
 }
 
-GS::Optional<GS::UniString> GetPensCommand::GetResponseSchema () const
+GS::Optional<GS::UniString> GetPensCommand::GetRawResponseSchema () const
 {
     return R"({
         "type": "object",

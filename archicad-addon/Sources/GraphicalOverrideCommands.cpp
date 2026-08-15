@@ -76,7 +76,7 @@ GS::Optional<GS::UniString> CreateGraphicalOverrideRuleCommand::GetInputParamete
     })";
 }
 
-GS::Optional<GS::UniString> CreateGraphicalOverrideRuleCommand::GetResponseSchema () const
+GS::Optional<GS::UniString> CreateGraphicalOverrideRuleCommand::GetRawResponseSchema () const
 {
     return R"({
         "type": "object",
@@ -154,7 +154,7 @@ GS::String GetGraphicalOverrideRulesCommand::GetName () const
     return "GetGraphicalOverrideRules";
 }
 
-GS::Optional<GS::UniString> GetGraphicalOverrideRulesCommand::GetResponseSchema () const
+GS::Optional<GS::UniString> GetGraphicalOverrideRulesCommand::GetRawResponseSchema () const
 {
     return R"({
         "type": "object",
@@ -232,7 +232,7 @@ GS::Optional<GS::UniString> CreateGraphicalOverrideCombinationCommand::GetInputP
     })";
 }
 
-GS::Optional<GS::UniString> CreateGraphicalOverrideCombinationCommand::GetResponseSchema () const
+GS::Optional<GS::UniString> CreateGraphicalOverrideCombinationCommand::GetRawResponseSchema () const
 {
     return R"({
         "type": "object",
