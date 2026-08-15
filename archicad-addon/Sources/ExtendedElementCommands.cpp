@@ -3697,19 +3697,6 @@ GS::Optional<GS::ObjectState> CreateBeamsCommand::SetTypeSpecificParameters (API
         }
     }
 
-    auto buildingMaterialId = GetOptionalObjectState (parameters, "buildingMaterialId");
-    if (buildingMaterialId.HasValue () && memo.beamSegments != nullptr) {
-        API_AttributeIndex buildingMaterialIndex = APIInvalidAttributeIndex;
-        if (!ResolveAttributeIndex (buildingMaterialId.Get (), API_BuildingMaterialID, buildingMaterialIndex)) {
-            return CreateErrorResponse (APIERR_BADPARS, "Invalid beam building material.");
-        }
-        GSSize nSegments = BMGetPtrSize (reinterpret_cast<GSPtr>(memo.beamSegments)) / sizeof (API_BeamSegmentType);
-        for (GSSize i = 0; i < nSegments; ++i) {
-            memo.beamSegments[i].assemblySegmentData.modelElemStructureType = API_BasicStructure;
-            memo.beamSegments[i].assemblySegmentData.buildingMaterial = buildingMaterialIndex;
-        }
-    }
-
     return {};
 }
 

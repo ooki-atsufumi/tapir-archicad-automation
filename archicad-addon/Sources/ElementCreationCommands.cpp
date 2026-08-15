@@ -269,8 +269,7 @@ GS::Optional<GS::UniString> CreateColumnsCommand::GetInputParametersSchema () co
                         "floorIndex": {
                             "type": "integer",
                             "description": "Optional floor index. If omitted, derived from the coordinate's z value."
-                        },
-                        "buildingMaterialId": { "$ref": "#/AttributeId" }
+                        }
                     },
                     "additionalProperties": false,
                     "required" : [
@@ -353,21 +352,6 @@ GS::Optional<GS::ObjectState> CreateColumnsCommand::SetTypeSpecificParameters (A
                 segment.modelElemStructureType = API_BasicStructure;
                 segment.buildingMaterial = GetAttributeIndexFromGuid (API_BuildingMaterialID, GetGuidFromObjectState (*buildingMaterialIdOs));
             }
-        }
-    }
-
-    const GS::ObjectState* buildingMaterialIdOS = parameters.Get ("buildingMaterialId");
-    if (buildingMaterialIdOS != nullptr && memo.columnSegments != nullptr) {
-        API_Attribute attribute = {};
-        attribute.header.typeID = API_BuildingMaterialID;
-        attribute.header.guid = GetGuidFromObjectState (*buildingMaterialIdOS);
-        if (attribute.header.guid == APINULLGuid || ACAPI_Attribute_Get (&attribute) != NoError) {
-            return CreateErrorResponse (APIERR_BADPARS, "Invalid column building material.");
-        }
-        GSSize nSegments = BMGetPtrSize (reinterpret_cast<GSPtr>(memo.columnSegments)) / sizeof (API_ColumnSegmentType);
-        for (GSSize i = 0; i < nSegments; ++i) {
-            memo.columnSegments[i].assemblySegmentData.modelElemStructureType = API_BasicStructure;
-            memo.columnSegments[i].assemblySegmentData.buildingMaterial = attribute.header.index;
         }
     }
 
