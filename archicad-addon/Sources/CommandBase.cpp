@@ -19,15 +19,19 @@ constexpr const char* CommandNamespace = "TapirCommand";
 // command registry and crashes the process on the FIRST ExecuteAddOnCommand) was found.
 void TapirBootLog (const char* fmt, ...)
 {
+    // getenv on purpose: it returns a borrowed pointer with nothing to free. The previous
+    // _dupenv_s + free() pair crashed Archicad at add-on load: _dupenv_s allocates inside
+    // ucrtbase.dll, while free() in this module is patched to Archicad's tbbmalloc, and
+    // tbbmalloc misclassifies the foreign pointer depending on adjacent heap contents
+    // (intermittent AV in tbbmalloc.dll at CheckEnvironment, confirmed via linker map on
+    // 2026-08-16). Never free memory here that another module's CRT allocated.
     static std::string logPath = [] () -> std::string {
-        char* temp = nullptr;
-        size_t len = 0;
-        if (_dupenv_s (&temp, &len, "TEMP") != 0 || temp == nullptr) {
+#pragma warning (suppress: 4996)
+        const char* temp = std::getenv ("TEMP");
+        if (temp == nullptr) {
             return {};
         }
-        std::string path = std::string (temp) + "\\tapir_boot.log";
-        free (temp);
-        return path;
+        return std::string (temp) + "\\tapir_boot.log";
     } ();
     if (logPath.empty ()) {
         return;
