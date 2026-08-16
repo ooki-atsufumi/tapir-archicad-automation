@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  GDLオブジェクトの最小テンプレート (LP_XMLConverter xml2libpart 用)
+
+  注意: SectVersion や Symbol 属性の値は Archicad のバージョンにより異なることがあります。
+  xml2libpart が構造エラーを出す場合は、SKILL.md の手順5に従い、既存の .gsm から
+  `template` サブコマンドで実物のテンプレート (template_generated.xml) を逆生成し、
+  その構造に合わせてください。
+
+  差し替える場所:
+    - Symbol の UnID: 2つのGUIDを新規生成した値に
+    - Script_2D / Script_3D の CDATA
+    - Parameters 内のパラメータ定義
+-->
+<Symbol Version="41" FileHwType="10" SymbolTypeID="8" IsPlaceable="true" UnID="{00000000-0000-0000-0000-000000000000}-{00000000-0000-0000-0000-000000000001}">
+	<Copyright SectVersion="1" SectionFlags="0">
+		<Author>Claude GDL</Author>
+		<License>
+			<Type></Type>
+			<Version></Version>
+		</License>
+	</Copyright>
+	<Ancestry SectVersion="1" SectionFlags="0">
+	</Ancestry>
+	<CalledMacros SectVersion="1" SectionFlags="0">
+	</CalledMacros>
+	<GDLPicts>
+	</GDLPicts>
+	<Script_1D SectVersion="8" SectionFlags="0"><![CDATA[]]></Script_1D>
+	<Script_2D SectVersion="8" SectionFlags="0"><![CDATA[! 平面表示: 3D形状の上面投影
+PROJECT2 3, 270, 2
+]]></Script_2D>
+	<Script_3D SectVersion="8" SectionFlags="0"><![CDATA[! ここに3Dスクリプトを書く
+MATERIAL mat
+BLOCK a, b, zzyzx
+]]></Script_3D>
+	<ParamSection SectVersion="30" SectionFlags="0">
+		<ParamSectHeader>
+		</ParamSectHeader>
+		<Parameters>
+			<Length Name="A">
+				<Description><![CDATA["幅"]]></Description>
+				<Value>1.000</Value>
+			</Length>
+			<Length Name="B">
+				<Description><![CDATA["奥行"]]></Description>
+				<Value>0.500</Value>
+			</Length>
+			<Length Name="ZZYZX">
+				<Description><![CDATA["高さ"]]></Description>
+				<Value>1.000</Value>
+			</Length>
+			<Material Name="mat">
+				<Description><![CDATA["材質"]]></Description>
+				<Value>1</Value>
+			</Material>
+		</Parameters>
+	</ParamSection>
+</Symbol>

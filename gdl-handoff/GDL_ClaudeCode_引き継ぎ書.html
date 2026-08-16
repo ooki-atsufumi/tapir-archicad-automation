@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/gdl 自動生成 引き継ぎ書</title>
+<style>
+  :root {
+    --ink: #1c2733;
+    --sub: #5a6b7d;
+    --line: #d9e1e8;
+    --bg: #f4f7f9;
+    --card: #ffffff;
+    --accent: #5b3a8f;
+    --accent-ink: #ffffff;
+    --warn-bg: #fff7e6;
+    --warn-line: #e6c26e;
+    --free-bg: #eef8f1;
+    --free-line: #79b98d;
+    --paid-bg: #fdeff0;
+    --paid-line: #d98a92;
+    --code-bg: #eef2f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+    line-height: 1.75; font-size: 16px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.hero {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px 32px; margin-bottom: 28px;
+  }
+  .hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: .02em; }
+  .hero p.lead { margin: 0; color: var(--sub); }
+  .hero .meta { margin-top: 14px; font-size: 13px; color: var(--sub); display: flex; gap: 18px; flex-wrap: wrap; }
+  .hero .meta span::before { content: "● "; color: var(--accent); font-size: 9px; vertical-align: 2px; }
+  section {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 32px; margin-bottom: 22px;
+  }
+  h2 { font-size: 20px; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); }
+  h2 .step {
+    display: inline-block; background: var(--accent); color: var(--accent-ink);
+    border-radius: 8px; font-size: 13px; padding: 2px 10px; margin-right: 10px; vertical-align: 2px;
+  }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 4px 0; }
+  code {
+    background: var(--code-bg); border-radius: 5px; padding: 1px 7px;
+    font-family: Consolas, "Courier New", monospace; font-size: 14px;
+  }
+  pre {
+    background: #22303c; color: #e8eef3; border-radius: 10px; padding: 14px 18px;
+    overflow-x: auto; font-size: 14px; line-height: 1.6;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14.5px; }
+  .scroll { overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #f1ecf8; white-space: nowrap; }
+  a { color: #0b5cad; }
+  .btn {
+    display: inline-block; background: var(--accent); color: var(--accent-ink) !important;
+    text-decoration: none; font-weight: 700; border-radius: 10px; padding: 12px 22px;
+    margin: 6px 8px 6px 0; box-shadow: 0 2px 4px rgba(0,0,0,.12);
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.sub { background: #40566b; }
+  .note {
+    background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px;
+    padding: 12px 16px; margin: 12px 0; font-size: 14.5px;
+  }
+  .note b:first-child { color: #8a6100; }
+  .free { background: var(--free-bg); }
+  .paid { background: var(--paid-bg); }
+  .tag { display: inline-block; border-radius: 6px; font-size: 12.5px; font-weight: 700; padding: 1px 10px; margin-right: 6px; }
+  .tag.free { border: 1px solid var(--free-line); color: #1e6b3a; }
+  .tag.paid { border: 1px solid var(--paid-line); color: #a33540; }
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 18px 0; }
+  .flow .box {
+    flex: 1 1 140px; min-width: 140px; border: 2px solid var(--accent); border-radius: 12px;
+    padding: 12px 14px; text-align: center; background: #f6f2fb;
+  }
+  .flow .box b { display: block; margin-bottom: 4px; }
+  .flow .box small { color: var(--sub); }
+  .flow .arrow {
+    flex: 0 0 auto; align-self: center; padding: 0 8px;
+    color: var(--accent); font-size: 22px; font-weight: 700;
+  }
+  .tree { font-family: Consolas, "Courier New", monospace; font-size: 14px; line-height: 1.5; }
+  footer { color: var(--sub); font-size: 13px; text-align: center; margin-top: 30px; }
+  @media print {
+    body { background: #fff; }
+    section, header.hero { border: none; padding: 10px 0; }
+    .btn { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>/gdl 自動生成 引き継ぎ書</h1>
+  <p class="lead">AIコーディングツール <b>Claude Code</b> に「<code>/gdl 幅900 奥行450 高さ1800の3段本棚を作って</code>」のように入力するだけで、GDLオブジェクトが自動で作られ <b>Archicad の中に生成・配置される</b>ところまでをセットアップする手順書です。</p>
+  <div class="meta">
+    <span>対象: Archicad 25〜29 をお使いの方（プログラミング知識は不要）</span>
+    <span>所要時間: 約30〜40分</span>
+    <span>作成日: 2026-08-16</span>
+  </div>
+</header>
+
+<section>
+  <h2>全体像 — 何がどう動くのか</h2>
+  <div class="flow">
+    <div class="box"><b>あなた</b><small>「/gdl 3段の本棚」<br>と日本語で入力</small></div>
+    <div class="arrow">→</div>
+    <div class="box"><b>Claude Code</b><small>AIがGDLスクリプトを<br>自動で書く</small></div>
+    <div class="arrow">→</div>
+    <div class="box"><b>変換・登録</b><small>Archicad付属ツールで<br>オブジェクト化しTapirで投入</small></div>
+    <div class="arrow">→</div>
+    <div class="box"><b>Archicad</b><small>埋め込みライブラリに登録され<br>モデルに配置される</small></div>
+  </div>
+  <p>Claude Code は Anthropic 社の公式AIツールで、パソコン上でファイル作成やスクリプト実行ができる「AIの作業員」です。この引き継ぎ書に付属する <b>/gdl スキル</b>（AIへの作業指示書のセット）を所定のフォルダに置くと、上の流れが全自動になります。生成はすべて自分のPC内で完結し、モデル自体が外部に送られることはありません（Claudeとの会話・生成コードはAnthropicのサーバーで処理されます）。</p>
+</section>
+
+<section>
+  <h2>費用のまとめ — 無料でできる範囲・有料が必要な範囲</h2>
+  <div class="scroll"><table>
+    <tr><th>項目</th><th>費用</th><th>説明</th></tr>
+    <tr class="free"><td>Python</td><td><span class="tag free">無料</span></td><td>スクリプト実行環境。公式サイトから無料</td></tr>
+    <tr class="free"><td>Tapir アドオン</td><td><span class="tag free">無料</span></td><td>オープンソース。Archicadに自動化命令を追加</td></tr>
+    <tr class="free"><td>LP_XMLConverter</td><td><span class="tag free">無料</span></td><td>GDLをオブジェクト化する変換ツール。<b>Archicadに最初から付属</b>（追加インストール不要）</td></tr>
+    <tr class="free"><td>/gdl スキルキット</td><td><span class="tag free">無料</span></td><td>この引き継ぎ書からダウンロード（ステップ4）</td></tr>
+    <tr class="free"><td>GDLマニュアル</td><td><span class="tag free">無料</span></td><td><a href="https://help.graphisoft.com/AC/23/JPN/GDL.pdf">日本語版PDF（Graphisoft公式）</a></td></tr>
+    <tr class="free"><td>Claude Code のインストール自体</td><td><span class="tag free">無料</span></td><td>ソフトのダウンロード・インストールは無料</td></tr>
+    <tr class="paid"><td><b>Claude Code の利用</b></td><td><span class="tag paid">有料</span></td><td><b>claude.ai の無料プランでは使えません。</b>下記のどちらかが必要</td></tr>
+  </table></div>
+  <h3>有料部分の選択肢（どちらか一方でOK）</h3>
+  <div class="scroll"><table>
+    <tr><th>方式</th><th>目安費用</th><th>向いている人</th></tr>
+    <tr><td><b>① Claude Pro プラン（定額・おすすめ）</b></td><td>月額 約20米ドル（約3,000円前後※為替による）。上位のMaxプランは約100米ドル〜</td><td>毎月ある程度使う人。claude.aiのアカウントでログインするだけで使えて管理が簡単。Proには利用量の上限（数時間ごとに回復）があり、上限に達したら時間を置けば再開できます</td></tr>
+    <tr><td>② API 従量課金（Claude Console）</td><td>使った分だけ。クレジットを先に購入（最低数ドル〜）。/gdl 1回あたりは数円〜数十円程度が目安</td><td>たまにしか使わない人。<a href="https://platform.claude.com" target="_blank" rel="noopener">platform.claude.com</a> でアカウントとAPIキーを作成。新規登録時に少額の無料お試しクレジットが付く場合があります</td></tr>
+  </table></div>
+  <p class="note"><b>最新の正確な料金:</b> 価格は改定されることがあります。契約前に必ず公式の <a href="https://claude.com/pricing" target="_blank" rel="noopener">claude.com/pricing</a>（日本円表示あり）を確認してください。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 1</span>Python をインストールする（無料）</h2>
+  <ol>
+    <li><a href="https://www.python.org/downloads/" target="_blank" rel="noopener">https://www.python.org/downloads/</a> からインストーラーをダウンロード。</li>
+    <li>インストーラー最初の画面で<b>必ず「Add python.exe to PATH」にチェック</b>を入れてから「Install Now」。</li>
+    <li>コマンドプロンプトで <code>python --version</code> → バージョンが表示されれば成功（Mac は <code>python3 --version</code>）。</li>
+  </ol>
+  <p>追加のPythonパッケージ（pip install）は不要です。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 2</span>Tapir アドオンをインストールする（無料）</h2>
+  <p><b>お使いの Archicad のバージョンと OS に合ったファイルを1つ</b>ダウンロードし、Archicad の<b>［オプション］→［アドオンマネージャー...］→［有効なアドオンのリストを編集］→［追加...］</b>で組み込みます。メニューバーに「Tapir」が出れば成功です。</p>
+  <div class="scroll"><table>
+    <tr><th>Archicad バージョン</th><th>Windows</th><th>Mac</th></tr>
+    <tr><td>Archicad 29</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC29_Win.apx">TapirAddOn_AC29_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC29_Mac.zip">TapirAddOn_AC29_Mac.zip</a></td></tr>
+    <tr><td>Archicad 28</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC28_Win.apx">TapirAddOn_AC28_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC28_Mac.zip">TapirAddOn_AC28_Mac.zip</a></td></tr>
+    <tr><td>Archicad 27</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC27_Win.apx">TapirAddOn_AC27_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC27_Mac.zip">TapirAddOn_AC27_Mac.zip</a></td></tr>
+    <tr><td>Archicad 26</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC26_Win.apx">TapirAddOn_AC26_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC26_Mac.zip">TapirAddOn_AC26_Mac.zip</a></td></tr>
+    <tr><td>Archicad 25</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC25_Win.apx">TapirAddOn_AC25_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC25_Mac.zip">TapirAddOn_AC25_Mac.zip</a></td></tr>
+  </table></div>
+  <p>Mac は zip を解凍してから追加してください。一覧: <a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest" target="_blank" rel="noopener">Tapir 最新リリース</a></p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 3</span>Claude Code をインストールしてログインする</h2>
+  <h3>3-1. アカウントの準備（有料部分）</h3>
+  <ul>
+    <li><b>定額プランの場合:</b> <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> でアカウントを作成し、<b>Pro プラン（またはMax）に加入</b>します。無料プランのままでは Claude Code にログインできません。</li>
+    <li><b>従量課金の場合:</b> <a href="https://platform.claude.com" target="_blank" rel="noopener">platform.claude.com</a>（Claude Console）でアカウント作成 → クレジットを購入します。</li>
+  </ul>
+  <h3>3-2. インストール（無料）</h3>
+  <p><b>Windows:</b> スタートメニューで「PowerShell」を開き、次の1行を貼り付けて Enter:</p>
+  <pre><code>irm https://claude.ai/install.ps1 | iex</code></pre>
+  <p><b>Mac:</b> ターミナルで:</p>
+  <pre><code>curl -fsSL https://claude.ai/install.sh | bash</code></pre>
+  <p>Node.js などの事前インストールは不要です（万一上のコマンドが失敗する場合の代替: Windowsは <code>winget install Anthropic.ClaudeCode</code>）。インストール後、<b>いったんコマンドプロンプト/PowerShellを閉じて開き直して</b>ください。</p>
+  <h3>3-3. 初回起動とログイン</h3>
+  <ol>
+    <li>コマンドプロンプトで <code>claude</code> と入力して Enter。</li>
+    <li>ブラウザが自動で開くので、3-1 で用意したアカウントでログインします（定額プランなら「Claude account」、従量課金なら「Console account」を選択）。</li>
+    <li>ターミナルに Claude Code の画面が出れば成功です。<code>/exit</code> と入力すると終了できます。</li>
+  </ol>
+  <p>公式ドキュメント: <a href="https://code.claude.com/docs/en/setup" target="_blank" rel="noopener">code.claude.com/docs</a>（英語）</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 4</span>/gdl スキルキットをダウンロードして配置する（無料）</h2>
+  <p>下のボタンでZIPがそのままダウンロードできます（このHTML内に埋め込んであるため、オフラインでも可）。</p>
+  <p>
+    <a class="btn" href="data:application/zip;base64,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" download="GDLスキルキット.zip">⬇ GDLスキルキット.zip をダウンロード</a>
+    <a class="btn sub" href="https://github.com/ooki-atsufumi/tapir-archicad-automation/tree/claude/bim-handoff-guide-html-3qf5br/gdl-handoff/skill-kit" target="_blank" rel="noopener">GitHub で中身を見る（予備）</a>
+  </p>
+  <ol>
+    <li>作業用フォルダを1つ作ります（例: デスクトップに「<b>GDL作業</b>」フォルダ）。</li>
+    <li>ZIPを右クリック→「すべて展開」で、<b>フォルダ構成ごと</b>「GDL作業」の中に展開します。</li>
+    <li>展開後、次の形になっていることを確認してください:</li>
+  </ol>
+  <pre class="tree">GDL作業\
+├─ .claude\
+│   └─ skills\
+│       └─ gdl\
+│           ├─ SKILL.md            ← スキル本体（AIへの指示書）
+│           ├─ gdl_to_archicad.py  ← 変換・投入スクリプト
+│           └─ template.xml        ← オブジェクトのひな型
+└─ README.txt</pre>
+  <p class="note"><b>ポイント:</b> <code>.claude</code> のように先頭にピリオドが付いたフォルダ名が正しい状態です。スキルの中身はすべてテキストファイルなので、メモ帳で開いて何をするものか確認できます。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 5</span>使ってみる — 「/gdl」で自動生成</h2>
+  <ol>
+    <li><b>Archicad を起動し、プロジェクトを開いておきます</b>（Tapir導入済みであること）。</li>
+    <li>コマンドプロンプトで作業フォルダに移動し、Claude Code を起動します:</li>
+  </ol>
+  <pre><code>cd デスクトップ\GDL作業
+claude</code></pre>
+  <ol start="3">
+    <li>Claude Code に、作りたいものを日本語で入力します:</li>
+  </ol>
+  <pre><code>/gdl 幅900 奥行450 高さ1800 の3段の本棚を作って。棚板の枚数はパラメータで変えられるように</code></pre>
+  <ol start="4">
+    <li>Claude が スクリプト作成 → 変換 → Archicadへの登録・配置 を進めます。途中で「このコマンドを実行してよいか」という<b>確認（y/n）</b>が何度か表示されるので、内容を見て <code>y</code>（Enter）で許可します。</li>
+    <li>完了すると Archicad の原点(0,0)にオブジェクトが配置されます。オブジェクトの設定ダイアログで寸法や段数のパラメータを変更できます。</li>
+  </ol>
+  <h3>2回目以降・修正したいとき</h3>
+  <ul>
+    <li>修正はそのまま会話で頼めます: <code>/gdl さっきの本棚の棚板を5段にして背板も付けて</code>（新しい名前で再生成されます）。</li>
+    <li>生成物はすべて埋め込みライブラリの「<b>Claude GDL</b>」フォルダにまとまります。不要になったら配置した要素を削除するだけです。配置・変更は Archicad の<b>［元に戻す］</b>でも取り消せます。</li>
+    <li>初回は環境チェックやひな型の自動調整が入るため数分かかることがあります。2回目からは速くなります。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>トラブルシューティング</h2>
+  <div class="scroll"><table>
+    <tr><th>症状</th><th>原因と対処</th></tr>
+    <tr><td>「claude は認識されていません」</td><td>インストール直後はターミナルの再起動が必要。コマンドプロンプトを閉じて開き直す。それでも駄目なら PC を再起動、または代替コマンド（<code>winget install Anthropic.ClaudeCode</code>）で再インストール。</td></tr>
+    <tr><td>Claude Code にログインできない</td><td>claude.ai の<b>無料プランでは使えません</b>。Pro 以上に加入しているか、Console（従量課金）のクレジット残高があるかを確認。</td></tr>
+    <tr><td>「usage limit」等と表示され止まった</td><td>定額プランの利用量上限に到達。<b>数時間待つと自動で回復</b>します。頻繁に達する場合は上位プラン（Max）や従量課金の検討を。</td></tr>
+    <tr><td>/gdl と入力しても反応しない</td><td>スキルの配置場所違いが大半。ステップ4のフォルダ構成（<code>.claude\skills\gdl\SKILL.md</code>）を確認し、必ず「GDL作業」フォルダの中で <code>claude</code> を起動する。</td></tr>
+    <tr><td>「Archicad に接続できません」</td><td>Archicad が起動していない／プロジェクトを開いていない。開いてから再実行。複数起動時は Claude に「ポート19724で試して」と伝える。</td></tr>
+    <tr><td>「Tapir アドオンが見つかりません」</td><td>ステップ2が未完了、またはバージョン違い。アドオンマネージャーで Tapir にチェックが入っているか確認。</td></tr>
+    <tr><td>「LP_XMLConverter が見つかりません」</td><td>Archicad のインストールフォルダをエクスプローラーで「LP_XMLConverter」と検索し、見つかったパスを Claude にそのまま伝える。</td></tr>
+    <tr><td>初回にXML変換エラーが続く</td><td>Archicadのバージョンによりオブジェクトのひな型調整が必要な場合があります。スキルが自動修復を試みます。その過程で「適当なオブジェクトを1つ .gsm 保存してほしい」と頼まれたら、Archicad で適当なオブジェクトを選択 →［ファイル］→［ライブラリとオブジェクト］→［選択内容に名前を付けて保存］で保存します（初回のみ）。</td></tr>
+    <tr><td>Tapir を入れてから Archicad の調子が悪い気がする（困ったときの戻し方）</td><td><b>無効化すればいつでも元に戻せます。</b>［オプション］→［アドオンマネージャー...］で Tapir のチェックを外して「OK」→ Archicad を再起動（またはアドオンファイル自体を一時的に別フォルダへ移動してから起動）。Archicad 本体やプロジェクトデータには影響しません。なお、バージョン違いのファイル（例: AC28 に AC29 用）を入れた場合はクラッシュではなく単に読み込まれないだけです。同様に、/gdl スキルをやめたいときは「GDL作業」フォルダを削除するだけで、Claude Code 自体も通常のアンインストールで削除できます。</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>技術メモ（引き継ぎを受けて改造する方へ）</h2>
+  <p>/gdl スキルが行っていることは次の4段階です。すべてのファイルはテキストで、<code>.claude\skills\gdl\</code> 内で確認・編集できます。</p>
+  <ol>
+    <li><b>GDL設計:</b> Claude が依頼文からパラメータ（a=幅 / b=奥行 / zzyzx=高さ＋独自パラメータ）と3D/2Dスクリプトを作成し、<code>template.xml</code> のひな型に流し込む。</li>
+    <li><b>変換:</b> Archicad 付属の <code>LP_XMLConverter</code>（<code>xml2libpart</code>）で XML → .gsm（バイナリのライブラリ部品）に変換。場所は Tapir の <code>GetArchicadLocation</code> コマンドで自動検出。</li>
+    <li><b>登録:</b> Tapir の <code>AddFilesToEmbeddedLibrary</code> で埋め込みライブラリに追加し、<code>ReloadLibraries</code> で再読込。</li>
+    <li><b>配置:</b> Tapir の <code>CreateObjects</code> で指定座標に配置。</li>
+  </ol>
+  <ul>
+    <li>安全設計: スキルは「埋め込みライブラリへの追加」と「新規配置」しか行いません（既存要素の変更・削除はしない方針を SKILL.md に明記）。</li>
+    <li>GDL文法の辞書: <a href="https://help.graphisoft.com/AC/23/JPN/GDL.pdf">GDLリファレンスガイド 日本語版PDF（公式）</a> / <a href="https://gdl.graphisoft.com/" target="_blank" rel="noopener">GDL Center（最新・英語）</a></li>
+    <li>Tapir コマンド仕様: <a href="https://enzyme-apd.github.io/tapir-archicad-automation/archicad-addon" target="_blank" rel="noopener">コマンドリファレンス</a></li>
+    <li>Claude Code スキルの仕組み: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">公式ドキュメント（英語）</a></li>
+  </ul>
+</section>
+
+<footer>
+  /gdl 自動生成 引き継ぎ書 — このHTMLは単体で完結しています（スキルキットZIPを内蔵）。そのままメール添付・共有フォルダ配布が可能です。
+</footer>
+
+</div>
+</body>
+</html>
