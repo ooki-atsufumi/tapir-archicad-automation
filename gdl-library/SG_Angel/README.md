@@ -40,16 +40,34 @@ SG_Angel/
 
 ## 取り込み方
 
-### 方法 A: HSF から開く（推奨）
+### 方法 A: 起動中の Archicad に自動で入れる（推奨）
 
-Archicad の `LP_XMLConverter` で `.gsm` に変換する:
+Tapir アドオンを読み込んだ Archicad が**起動している状態**で、
+**Archicad と同じ PC 上で**次を実行する:
 
 ```bat
-LP_XMLConverter.exe hsf2libpart "...\gdl-library\SG_Angel" "...\SG_Angel.gsm"
+cd gdl-library
+python install_to_archicad.py
 ```
 
-`LP_XMLConverter.exe` は Archicad インストールフォルダ直下にある。
-生成した `.gsm` をライブラリフォルダに置いて読み込む。
+スクリプトがやること:
+
+1. Tapir の `GetArchicadLocation` で起動中の Archicad を探し、
+   その隣にある `LP_XMLConverter` を自動で見つける
+2. HSF フォルダを `SG_Angel.gsm` に変換する
+3. Tapir の `AddFilesToEmbeddedLibrary` で**開いているプロジェクトの
+   埋め込みライブラリ**に登録する
+4. `ReloadLibraries` で再読み込みする
+
+完了後、オブジェクトツールの「埋め込みライブラリ」に `SG_Angel` が入る。
+
+`LP_XMLConverter` が自動で見つからない場合:
+
+```bat
+python install_to_archicad.py --converter "C:\Program Files\GRAPHISOFT\Archicad 28\LP_XMLConverter.exe"
+```
+
+変換した `.gsm` を手元にも残したい場合は `--keep-gsm <フォルダ>` を付ける。
 
 > `libpartdata.xml` は Archicad で書き出したものではなく手書きのため、
 > お使いのバージョンの `LP_XMLConverter` がスキーマ差分で弾く可能性がある。
