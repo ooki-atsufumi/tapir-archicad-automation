@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Symbol Name="SG_Angel" Version="52" Platform="WIN" MainGUID="42D8B33A-0A6F-47F1-9646-1113ACBC6BD8" SubIdent="0" IsPlaceable="true" IsTemplate="false" IsPropertyObject="false">
+	<Keywords><![CDATA[仮設 足場 移動式室内足場 可搬式作業台 SGエンジェル GOP scaffold mobile platform]]></Keywords>
+	<Description><![CDATA[SG エンジェル ― アルミ合金製 移動式室内足場（ジー・オー・ピー株式会社）。仮設計画用のパラメトリック オブジェクト。機種・天板高さ・手すり・連結台数を指定して配置する。]]></Description>
+	<ParamSection SectVersion="36" SectionFlags="0" SubIdent="0">
+		<Parameters>
+
+			<Title Name="ttlModel">
+				<Description><![CDATA["■ 機種"]]></Description>
+			</Title>
+			<Integer Name="iModel">
+				<Description><![CDATA["機種"]]></Description>
+				<Value>1</Value>
+			</Integer>
+			<Integer Name="iType">
+				<Description><![CDATA["タイプ（天板高さレンジ）"]]></Description>
+				<Value>1</Value>
+			</Integer>
+			<Length Name="hDeck">
+				<Description><![CDATA["天板高さ"]]></Description>
+				<Value>0.9</Value>
+			</Length>
+
+			<Title Name="ttlConn">
+				<Description><![CDATA["■ 連結"]]></Description>
+			</Title>
+			<Integer Name="nX">
+				<Description><![CDATA["連結台数（長手方向）"]]></Description>
+				<Value>1</Value>
+			</Integer>
+			<Integer Name="nY">
+				<Description><![CDATA["連結台数（短手方向）"]]></Description>
+				<Value>1</Value>
+			</Integer>
+			<Length Name="gapX">
+				<Description><![CDATA["長手方向の離れ（0=突き付け）"]]></Description>
+				<Value>0</Value>
+			</Length>
+			<Length Name="gapY">
+				<Description><![CDATA["短手方向の離れ（0=突き付け）"]]></Description>
+				<Value>0</Value>
+			</Length>
+			<Boolean Name="bBridgeX">
+				<Description><![CDATA["長手方向の離れにブリッジを架ける"]]></Description>
+				<Value>0</Value>
+			</Boolean>
+			<Boolean Name="bBridgeY">
+				<Description><![CDATA["短手方向の離れにブリッジを架ける"]]></Description>
+				<Value>0</Value>
+			</Boolean>
+
+			<Title Name="ttlGuard">
+				<Description><![CDATA["■ 手すり（感知フレーム）・補助脚"]]></Description>
+			</Title>
+			<Boolean Name="bGuardFront">
+				<Description><![CDATA["手すり：手前（長手 1500 側）"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<Boolean Name="bGuardBack">
+				<Description><![CDATA["手すり：奥（長手 1500 側）"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<Boolean Name="bGuardLeft">
+				<Description><![CDATA["手すり：左妻（短手側）"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<Boolean Name="bGuardRight">
+				<Description><![CDATA["手すり：右妻（短手側）"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<Boolean Name="bGuardGap">
+				<Description><![CDATA["連結の離れ側にも手すりを立てる"]]></Description>
+				<Value>0</Value>
+			</Boolean>
+			<Boolean Name="bOutrigger">
+				<Description><![CDATA["補助脚（転倒防止）を表示"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+
+			<Title Name="ttl2D">
+				<Description><![CDATA["■ 2D 表示"]]></Description>
+			</Title>
+			<Boolean Name="b2DFootprint">
+				<Description><![CDATA["設置範囲（補助脚含む）を破線表示"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<Boolean Name="b2DCaster">
+				<Description><![CDATA["キャスター位置を表示"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<Boolean Name="b2DDeckLine">
+				<Description><![CDATA["天板の目地を表示"]]></Description>
+				<Value>0</Value>
+			</Boolean>
+			<Boolean Name="b2DLabel">
+				<Description><![CDATA["機種名・天板高さを表示"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<RealNum Name="txtSize">
+				<Description><![CDATA["文字サイズ [mm]"]]></Description>
+				<Value>2.5</Value>
+			</RealNum>
+			<Boolean Name="bShowFill">
+				<Description><![CDATA["天板を塗りつぶす"]]></Description>
+				<Value>1</Value>
+			</Boolean>
+			<FillPattern Name="fillDeck">
+				<Description><![CDATA["天板の塗りつぶし"]]></Description>
+				<Value>1</Value>
+			</FillPattern>
+			<PenColor Name="penFill">
+				<Description><![CDATA["塗りつぶしペン"]]></Description>
+				<Value>11</Value>
+			</PenColor>
+			<Boolean Name="bFillBk">
+				<Description><![CDATA["塗りつぶしの背景を塗る"]]></Description>
+				<Value>0</Value>
+			</Boolean>
+			<PenColor Name="penFillBk">
+				<Description><![CDATA["背景ペン"]]></Description>
+				<Value>19</Value>
+			</PenColor>
+			<PenColor Name="penContour">
+				<Description><![CDATA["天板 外形線ペン"]]></Description>
+				<Value>6</Value>
+			</PenColor>
+			<PenColor Name="penDeck">
+				<Description><![CDATA["細線ペン（目地・キャスター・ブリッジ）"]]></Description>
+				<Value>11</Value>
+			</PenColor>
+			<PenColor Name="penGuard">
+				<Description><![CDATA["手すりペン"]]></Description>
+				<Value>4</Value>
+			</PenColor>
+			<PenColor Name="penFoot">
+				<Description><![CDATA["設置範囲ペン"]]></Description>
+				<Value>13</Value>
+			</PenColor>
+			<PenColor Name="penText">
+				<Description><![CDATA["文字ペン"]]></Description>
+				<Value>6</Value>
+			</PenColor>
+			<LineType Name="lineBody">
+				<Description><![CDATA["本体の線種"]]></Description>
+				<Value>1</Value>
+			</LineType>
+			<LineType Name="lineFoot">
+				<Description><![CDATA["設置範囲の線種"]]></Description>
+				<Value>3</Value>
+			</LineType>
+
+			<Title Name="ttl3D">
+				<Description><![CDATA["■ 3D 表示"]]></Description>
+			</Title>
+			<Integer Name="iLOD">
+				<Description><![CDATA["表示詳細度"]]></Description>
+				<Value>2</Value>
+			</Integer>
+			<Material Name="matFrame">
+				<Description><![CDATA["フレーム・脚の材質"]]></Description>
+				<Value>18</Value>
+			</Material>
+			<Material Name="matDeck">
+				<Description><![CDATA["天板の材質"]]></Description>
+				<Value>18</Value>
+			</Material>
+			<Material Name="matGuard">
+				<Description><![CDATA["手すりの材質"]]></Description>
+				<Value>18</Value>
+			</Material>
+			<Material Name="matCaster">
+				<Description><![CDATA["キャスターの材質"]]></Description>
+				<Value>27</Value>
+			</Material>
+
+			<Title Name="ttlQty">
+				<Description><![CDATA["■ 数量・積算（自動計算／編集不可）"]]></Description>
+			</Title>
+			<String Name="sModelName">
+				<Description><![CDATA["機種名"]]></Description>
+				<Value><![CDATA[SG エンジェル Mタイプ]]></Value>
+			</String>
+			<String Name="sSpec">
+				<Description><![CDATA["仕様"]]></Description>
+				<Value><![CDATA[天板 1500x1000 / 天板高 900mm]]></Value>
+			</String>
+			<Integer Name="nUnitOut">
+				<Description><![CDATA["台数"]]></Description>
+				<Value>1</Value>
+			</Integer>
+			<RealNum Name="rMassTotal">
+				<Description><![CDATA["質量 合計 [kg]"]]></Description>
+				<Value>28</Value>
+			</RealNum>
+			<RealNum Name="rDeckArea">
+				<Description><![CDATA["作業床 面積 [m2]"]]></Description>
+				<Value>1.5</Value>
+			</RealNum>
+			<RealNum Name="rLoadSingle">
+				<Description><![CDATA["許容積載荷重（単体使用）[kg]"]]></Description>
+				<Value>190</Value>
+			</RealNum>
+			<RealNum Name="rLoadPerSqm">
+				<Description><![CDATA["許容積載荷重（連結使用）[kgf/m2]"]]></Description>
+				<Value>120</Value>
+			</RealNum>
+
+			<Title Name="ttlDim">
+				<Description><![CDATA["■ 外形寸法（自動計算／編集不可）"]]></Description>
+			</Title>
+			<Length Name="A">
+				<Description><![CDATA["全体長さ"]]></Description>
+				<Value>1.5</Value>
+			</Length>
+			<Length Name="B">
+				<Description><![CDATA["全体幅"]]></Description>
+				<Value>1</Value>
+			</Length>
+			<Length Name="ZZYZX">
+				<Description><![CDATA["全体高さ"]]></Description>
+				<Value>1.8</Value>
+			</Length>
+
+		</Parameters>
+	</ParamSection>
+	<CalledMacros/>
+</Symbol>

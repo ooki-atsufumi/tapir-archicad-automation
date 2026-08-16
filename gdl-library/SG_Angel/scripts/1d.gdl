@@ -1,0 +1,181 @@
+! ============================================================================
+!  SG エンジェル  (GOP / ジー・オー・ピー株式会社)
+!  アルミ合金製 移動式室内足場 ―― 仮設計画用 パラメトリック オブジェクト
+!  ----------------------------------------------------------------------
+!  MASTER SCRIPT (1d.gdl)
+!
+!  すべての派生寸法・機種諸元をここで計算し、2D / 3D スクリプトで共用する。
+!  諸元はメーカー公表カタログ値に基づく（README.md の「諸元の出典」を参照）。
+! ============================================================================
+
+
+! ---------------------------------------------------------------------------
+!  1. 機種諸元テーブル
+! ---------------------------------------------------------------------------
+unitL = 1.500                       ! 天板長さ（長手 = ローカル X 方向）
+
+if iModel = 2 then
+	unitW   = 0.750                 ! 天板幅（短手 = ローカル Y 方向）
+	modelN  = "SG エンジェル750"
+	mGuardS = 3.5                   ! 短手側 感知フレーム質量 [kg]
+	sizeTxt = "1500x750"
+else
+	unitW   = 1.000
+	modelN  = "SG エンジェル"
+	mGuardS = 4.0
+	sizeTxt = "1500x1000"
+endif
+
+mGuardL = 5.5                       ! 長手側 感知フレーム質量 [kg]（参考値）
+mBridge = 8.0                       ! 共通ブリッジ1500 質量 [kg]
+
+! 設置寸法（補助脚内蔵ぶんを含む外形）
+setL = 1.560
+setW = unitW + 0.010
+
+! タイプ別 天板高さレンジ（伸縮脚 100mm ピッチ）
+if iType = 2 then
+	typeN   = "L"
+	hMin    = 1.075                 ! 1075 - 1475 / 100mm x 4段
+	stepMax = 4
+	mUnit   = 33.0 - (iModel = 2) * 3.0
+else
+	typeN   = "M"
+	hMin    = 0.700                 ! 700 - 900 / 100mm x 2段
+	stepMax = 2
+	mUnit   = 28.0 - (iModel = 2) * 3.0
+endif
+hMax = hMin + stepMax * 0.100
+
+
+! ---------------------------------------------------------------------------
+!  2. 天板高さ ―― 実在する 100mm ピッチの段にスナップ
+!     （手入力しても必ずカタログ上の段に丸められる）
+! ---------------------------------------------------------------------------
+hD = hDeck
+if hD < hMin then hD = hMin
+if hD > hMax then hD = hMax
+
+nStep = ROUND_INT ((hD - hMin) / 0.100)
+if nStep < 0       then nStep = 0
+if nStep > stepMax then nStep = stepMax
+hD = hMin + nStep * 0.100
+
+
+! ---------------------------------------------------------------------------
+!  3. 連結（1オブジェクトで連結架台一式を配置できるようにする）
+! ---------------------------------------------------------------------------
+nCntX = MAX (1, INT (nX))           ! 長手方向の連結台数
+nCntY = MAX (1, INT (nY))           ! 短手方向の連結台数
+gX    = MAX (0, gapX)               ! 長手方向の離れ（0 = 突き付け連結）
+gY    = MAX (0, gapY)               ! 短手方向の離れ
+
+nUnitTotal = nCntX * nCntY
+
+pitchX = unitL + gX
+pitchY = unitW + gY
+
+totL = nCntX * unitL + (nCntX - 1) * gX
+totW = nCntY * unitW + (nCntY - 1) * gY
+
+! ブリッジは離れがある場合のみ成立
+useBrX = bBridgeX & (gX > 0) & (nCntX > 1)
+useBrY = bBridgeY & (gY > 0) & (nCntY > 1)
+
+
+! ---------------------------------------------------------------------------
+!  4. 手すり（感知フレーム）
+! ---------------------------------------------------------------------------
+hGuard = 0.900                      ! 天板からの手すり高さ
+railMid = 0.450                     ! 中桟高さ
+guardS  = 0.030                     ! 手すり材 断面
+
+gAny = bGuardFront | bGuardBack | bGuardLeft | bGuardRight | bGuardGap
+
+
+! ---------------------------------------------------------------------------
+!  5. 主要寸法パラメータの固定
+!     A / B / ZZYZX は機種と連結数から決まるため、ここで上書きして固定する。
+! ---------------------------------------------------------------------------
+PARAMETERS	A     = totL, \
+			B     = totW, \
+			ZZYZX = hD + gAny * hGuard, \
+			hDeck = hD
+
+
+! ---------------------------------------------------------------------------
+!  6. 部材寸法（作図用の代表値）
+! ---------------------------------------------------------------------------
+deckTop  = 0.010                    ! 天板デッキ板厚
+deckFrmH = 0.040                    ! 天板フレーム成
+deckFrmW = 0.040                    ! 天板フレーム幅
+deckT    = deckTop + deckFrmH       ! 天板構造の全成 = 0.050
+
+legIns   = 0.150                    ! 妻側からの脚芯位置
+legEdge  = 0.045                    ! 桁側からの脚芯位置
+legSX    = 0.050                    ! 外管 断面 X
+legSY    = 0.030                    ! 外管 断面 Y
+legInX   = 0.040                    ! 内管 断面 X
+legInY   = 0.024                    ! 内管 断面 Y
+
+castR    = 0.050                    ! キャスター車輪半径（φ100 Wキャスター）
+castW    = 0.030                    ! 車輪 1輪の幅
+castTop  = 0.115                    ! キャスター取付面高さ（＝脚下端）
+
+outProj  = 0.030                    ! 補助脚の張り出し（片側）
+
+
+! ---------------------------------------------------------------------------
+!  7. 表示詳細度
+! ---------------------------------------------------------------------------
+lod = INT (iLOD)
+if lod < 1 then lod = 1
+if lod > 3 then lod = 3
+
+resN = 8
+if lod = 2 then resN = 16
+if lod = 3 then resN = 24
+
+
+! ---------------------------------------------------------------------------
+!  8. 数量・質量（積算／一覧表用）
+! ---------------------------------------------------------------------------
+! 感知フレーム（手すり）枚数
+nGL = 0                             ! 長手側（W1500）
+nGS = 0                             ! 短手側（W1000 / W750）
+if bGuardFront then nGL = nGL + nCntX
+if bGuardBack  then nGL = nGL + nCntX
+if bGuardLeft  then nGS = nGS + nCntY
+if bGuardRight then nGS = nGS + nCntY
+
+if bGuardGap then
+	if gY > 0 then nGL = nGL + 2 * (nCntY - 1) * nCntX
+	if gX > 0 then nGS = nGS + 2 * (nCntX - 1) * nCntY
+endif
+
+! ブリッジ枚数
+nBr = 0
+if useBrX then nBr = nBr + (nCntX - 1) * nCntY
+if useBrY then nBr = nBr + (nCntY - 1) * nCntX
+
+mTotal   = mUnit * nUnitTotal + mGuardL * nGL + mGuardS * nGS + mBridge * nBr
+deckArea = unitL * unitW * nUnitTotal
+
+
+! ---------------------------------------------------------------------------
+!  9. 表示用文字列
+! ---------------------------------------------------------------------------
+! 天板高さの数値文字列（先頭の空白を除去）
+hTxt = STR (hD * 1000, 4, 0)
+if STRSUB (hTxt, 1, 1) = " " then hTxt = STRSUB (hTxt, 2, STRLEN (hTxt) - 1)
+
+nameTxt = modelN + " " + typeN + "タイプ"
+specTxt = "天板 " + sizeTxt + " / 天板高 " + hTxt + "mm"
+
+PARAMETERS	sModelName  = nameTxt, \
+			sSpec       = specTxt, \
+			nUnitOut    = nUnitTotal, \
+			rMassTotal  = mTotal, \
+			rDeckArea   = deckArea, \
+			rLoadSingle = 190, \
+			rLoadPerSqm = 120

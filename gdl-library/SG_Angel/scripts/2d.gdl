@@ -1,0 +1,211 @@
+! ============================================================================
+!  SG エンジェル  ―― 2D SCRIPT (2d.gdl)
+!
+!  仮設計画図（1:50 - 1:200）での可読性を優先した平面シンボル。
+!    ・天板外形 ＋ 塗り
+!    ・設置範囲（補助脚含む）の破線
+!    ・手すりの立面位置を太線で表現
+!    ・キャスター位置
+!    ・機種名／天板高さの文字
+! ============================================================================
+
+
+! ---------------------------------------------------------------------------
+!  1. 設置範囲（補助脚を含む外形）
+! ---------------------------------------------------------------------------
+if b2DFootprint then
+	PEN penFoot
+	LINE_TYPE lineFoot
+	dxF = (setL - unitL) / 2
+	dyF = (setW - unitW) / 2
+	for i = 1 to nCntX
+		for j = 1 to nCntY
+			x0 = (i - 1) * pitchX - dxF
+			y0 = (j - 1) * pitchY - dyF
+			RECT2 x0, y0, x0 + setL, y0 + setW
+		next j
+	next i
+endif
+
+
+! ---------------------------------------------------------------------------
+!  2. ブリッジ（連結の隙間を渡す作業床）
+! ---------------------------------------------------------------------------
+LINE_TYPE lineBody
+PEN penDeck
+if useBrX then
+	for i = 1 to nCntX - 1
+		for j = 1 to nCntY
+			x0 = (i - 1) * pitchX + unitL - 0.050
+			y0 = (j - 1) * pitchY + 0.050
+			RECT2 x0, y0, x0 + gX + 0.100, y0 + unitW - 0.100
+		next j
+	next i
+endif
+if useBrY then
+	for i = 1 to nCntX
+		for j = 1 to nCntY - 1
+			x0 = (i - 1) * pitchX + 0.050
+			y0 = (j - 1) * pitchY + unitW - 0.050
+			RECT2 x0, y0, x0 + unitL - 0.100, y0 + gY + 0.100
+		next j
+	next i
+endif
+
+
+! ---------------------------------------------------------------------------
+!  3. 本体（天板）
+! ---------------------------------------------------------------------------
+for i = 1 to nCntX
+	for j = 1 to nCntY
+		ADD2 (i - 1) * pitchX, (j - 1) * pitchY
+			GOSUB 100
+		DEL 1
+	next j
+next i
+
+
+! ---------------------------------------------------------------------------
+!  4. 手すり（感知フレーム）
+! ---------------------------------------------------------------------------
+for i = 1 to nCntX
+	for j = 1 to nCntY
+		ADD2 (i - 1) * pitchX, (j - 1) * pitchY
+
+			fOn = bGuardGap & (gY > 0)
+			if j = 1 then fOn = bGuardFront
+			if fOn then
+				gLen = unitL
+				ADD2 0, guardS / 2
+					GOSUB 200
+				DEL 1
+			endif
+
+			fOn = bGuardGap & (gY > 0)
+			if j = nCntY then fOn = bGuardBack
+			if fOn then
+				gLen = unitL
+				ADD2 0, unitW - guardS / 2
+					GOSUB 200
+				DEL 1
+			endif
+
+			fOn = bGuardGap & (gX > 0)
+			if i = 1 then fOn = bGuardLeft
+			if fOn then
+				gLen = unitW
+				ADD2 guardS / 2, 0
+				ROT2 90
+					GOSUB 200
+				DEL 2
+			endif
+
+			fOn = bGuardGap & (gX > 0)
+			if i = nCntX then fOn = bGuardRight
+			if fOn then
+				gLen = unitW
+				ADD2 unitL - guardS / 2, 0
+				ROT2 90
+					GOSUB 200
+				DEL 2
+			endif
+
+		DEL 1
+	next j
+next i
+
+
+! ---------------------------------------------------------------------------
+!  5. 文字（機種・天板高さ）
+! ---------------------------------------------------------------------------
+if b2DLabel then
+	PEN penText
+	DEFINE STYLE{2} "sgAngelLbl" "Arial", txtSize, 5, 0
+	STYLE "sgAngelLbl"
+	dyT = txtSize / 1000 * GLOB_SCALE * 1.35
+	TEXT2 totL / 2, totW / 2 + dyT / 2, nameTxt
+	TEXT2 totL / 2, totW / 2 - dyT / 2, "H=" + hTxt
+endif
+
+
+! ---------------------------------------------------------------------------
+!  6. ホットスポット
+!     全体外形の角・中央に加え、各台の四隅と中心を出して並べ配置しやすくする。
+! ---------------------------------------------------------------------------
+HOTSPOT2 0,    0
+HOTSPOT2 totL, 0
+HOTSPOT2 totL, totW
+HOTSPOT2 0,    totW
+HOTSPOT2 totL / 2, totW / 2
+HOTSPOT2 totL / 2, 0
+HOTSPOT2 totL / 2, totW
+HOTSPOT2 0,    totW / 2
+HOTSPOT2 totL, totW / 2
+
+for i = 1 to nCntX
+	for j = 1 to nCntY
+		x0 = (i - 1) * pitchX
+		y0 = (j - 1) * pitchY
+		HOTSPOT2 x0,         y0
+		HOTSPOT2 x0 + unitL, y0
+		HOTSPOT2 x0 + unitL, y0 + unitW
+		HOTSPOT2 x0,         y0 + unitW
+		HOTSPOT2 x0 + unitL / 2, y0 + unitW / 2
+	next j
+next i
+
+END
+
+
+! ###########################################################################
+!  SUBROUTINES
+! ###########################################################################
+
+! ---------------------------------------------------------------------------
+100:	! 天板 1台分
+! ---------------------------------------------------------------------------
+	LINE_TYPE lineBody
+	if bShowFill then
+		PEN penContour
+		FILL fillDeck
+		bkPen = 0                               ! 0 = 背景透明
+		if bFillBk then bkPen = penFillBk
+		POLY2_B{2} 4, 7, penFill, bkPen, \
+			0,     0,     0, \
+			unitL, 0,     0, \
+			unitL, unitW, 0, \
+			0,     unitW, 0
+	else
+		PEN penContour
+		RECT2 0, 0, unitL, unitW
+	endif
+
+	! 天板の縞板目地
+	if b2DDeckLine then
+		PEN penDeck
+		for t = 1 to 5
+			LINE2 t * unitL / 6, 0.030, t * unitL / 6, unitW - 0.030
+		next t
+	endif
+
+	! キャスター位置
+	if b2DCaster then
+		PEN penDeck
+		for kx = 1 to 2
+			for ky = 1 to 2
+				CIRCLE2 legIns  + (kx - 1) * (unitL - 2 * legIns), \
+				        legEdge + (ky - 1) * (unitW - 2 * legEdge), castR
+			next ky
+		next kx
+	endif
+RETURN
+
+
+! ---------------------------------------------------------------------------
+200:	! 感知フレーム（手すり）: 原点から +X 方向へ gLen
+! ---------------------------------------------------------------------------
+	PEN penGuard
+	LINE_TYPE lineBody
+	RECT2 0, -guardS / 2, gLen, guardS / 2
+	LINE2 0, 0, gLen, 0
+RETURN

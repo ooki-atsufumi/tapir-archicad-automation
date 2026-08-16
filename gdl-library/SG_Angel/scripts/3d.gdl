@@ -1,0 +1,301 @@
+! ============================================================================
+!  SG エンジェル  ―― 3D SCRIPT (3d.gdl)
+!
+!  原点は連結架台全体の左手前角（天板外形の角）、Z=0 は床。
+!  ローカル +X = 長手（1500）、+Y = 短手（1000 / 750）。
+! ============================================================================
+
+RESOL resN
+
+
+! ---------------------------------------------------------------------------
+!  本体（天板・脚・キャスター・補助脚）
+! ---------------------------------------------------------------------------
+for i = 1 to nCntX
+	for j = 1 to nCntY
+		ADDx (i - 1) * pitchX
+		ADDy (j - 1) * pitchY
+			GOSUB 100
+		DEL 2
+	next j
+next i
+
+
+! ---------------------------------------------------------------------------
+!  ブリッジ（連結の隙間を渡す作業床）
+! ---------------------------------------------------------------------------
+MATERIAL matDeck
+if useBrX then
+	for i = 1 to nCntX - 1
+		for j = 1 to nCntY
+			ADDx (i - 1) * pitchX + unitL - 0.050
+			ADDy (j - 1) * pitchY + 0.050
+			ADDz hD - deckTop
+				BLOCK gX + 0.100, unitW - 0.100, deckTop
+			DEL 3
+		next j
+	next i
+endif
+
+if useBrY then
+	for i = 1 to nCntX
+		for j = 1 to nCntY - 1
+			ADDx (i - 1) * pitchX + 0.050
+			ADDy (j - 1) * pitchY + unitW - 0.050
+			ADDz hD - deckTop
+				BLOCK unitL - 0.100, gY + 0.100, deckTop
+			DEL 3
+		next j
+	next i
+endif
+
+
+! ---------------------------------------------------------------------------
+!  手すり（感知フレーム）
+!  外周面は個別スイッチ、連結の隙間側は bGuardGap でまとめて制御する。
+! ---------------------------------------------------------------------------
+for i = 1 to nCntX
+	for j = 1 to nCntY
+		ADDx (i - 1) * pitchX
+		ADDy (j - 1) * pitchY
+
+			! --- 前面（Y = 0 側 / 長手 1500）---
+			fOn = bGuardGap & (gY > 0)
+			if j = 1 then fOn = bGuardFront
+			if fOn then
+				gLen = unitL
+				ADDy guardS / 2
+					GOSUB 200
+				DEL 1
+			endif
+
+			! --- 背面（Y = unitW 側 / 長手 1500）---
+			fOn = bGuardGap & (gY > 0)
+			if j = nCntY then fOn = bGuardBack
+			if fOn then
+				gLen = unitL
+				ADDy unitW - guardS / 2
+					GOSUB 200
+				DEL 1
+			endif
+
+			! --- 左妻（X = 0 側 / 短手）---
+			fOn = bGuardGap & (gX > 0)
+			if i = 1 then fOn = bGuardLeft
+			if fOn then
+				gLen = unitW
+				ADDx guardS / 2
+				ROTz 90
+					GOSUB 200
+				DEL 2
+			endif
+
+			! --- 右妻（X = unitL 側 / 短手）---
+			fOn = bGuardGap & (gX > 0)
+			if i = nCntX then fOn = bGuardRight
+			if fOn then
+				gLen = unitW
+				ADDx unitL - guardS / 2
+				ROTz 90
+					GOSUB 200
+				DEL 2
+			endif
+
+		DEL 2
+	next j
+next i
+
+
+! ---------------------------------------------------------------------------
+!  3D ホットスポット（全体外形の角＋天板面）
+! ---------------------------------------------------------------------------
+for k = 1 to 4
+	xh = (k = 2 | k = 3) * totL
+	yh = (k = 3 | k = 4) * totW
+	HOTSPOT xh, yh, 0
+	HOTSPOT xh, yh, hD
+next k
+
+END
+
+
+! ###########################################################################
+!  SUBROUTINES
+! ###########################################################################
+
+! ---------------------------------------------------------------------------
+100:	! 本体 1台（ローカル原点 = 天板外形の角、床レベル）
+! ---------------------------------------------------------------------------
+	! ---- 天板デッキ ----
+	MATERIAL matDeck
+	ADDz hD - deckTop
+		BLOCK unitL, unitW, deckTop
+	DEL 1
+
+	! ---- 天板フレーム（周囲）----
+	MATERIAL matFrame
+	ADDz hD - deckT
+		BLOCK unitL, deckFrmW, deckFrmH
+		ADDy unitW - deckFrmW
+			BLOCK unitL, deckFrmW, deckFrmH
+		DEL 1
+		ADDy deckFrmW
+			BLOCK deckFrmW, unitW - 2 * deckFrmW, deckFrmH
+			ADDx unitL - deckFrmW
+				BLOCK deckFrmW, unitW - 2 * deckFrmW, deckFrmH
+			DEL 1
+		DEL 1
+	DEL 1
+
+	! ---- 脚（伸縮）＋ キャスター ----
+	legTop = hD - deckT
+	legLen = legTop - castTop
+	if legLen < 0.10 then legLen = 0.10
+	lOut = legLen * 0.60                    ! 外管の長さ
+	lIn  = legLen - lOut + 0.080            ! 内管の長さ（差込ぶんを含む）
+
+	for kx = 1 to 2
+		xLeg = legIns + (kx - 1) * (unitL - 2 * legIns)
+		for ky = 1 to 2
+			yLeg = legEdge + (ky - 1) * (unitW - 2 * legEdge)
+
+			ADDx xLeg
+			ADDy yLeg
+				MATERIAL matFrame
+				! 外管
+				ADDz legTop - lOut
+					ADDx -legSX / 2
+					ADDy -legSY / 2
+						BLOCK legSX, legSY, lOut
+					DEL 2
+				DEL 1
+				! 内管
+				ADDz castTop
+					ADDx -legInX / 2
+					ADDy -legInY / 2
+						BLOCK legInX, legInY, lIn
+					DEL 2
+				DEL 1
+				GOSUB 300                   ! キャスター
+			DEL 2
+		next ky
+	next kx
+
+	! ---- 桁方向のつなぎ材（脚と脚を結ぶ）----
+	if lod >= 2 then
+		MATERIAL matFrame
+		zBr = castTop + legLen * 0.35
+		for ky = 1 to 2
+			yLeg = legEdge + (ky - 1) * (unitW - 2 * legEdge)
+			ADDx legIns
+			ADDy yLeg - 0.012
+			ADDz zBr
+				BLOCK unitL - 2 * legIns, 0.024, 0.030
+			DEL 3
+		next ky
+	endif
+
+	! ---- 補助脚（転倒防止 / 内蔵タイプ）----
+	if bOutrigger then
+		MATERIAL matFrame
+		zTop = castTop + 0.100
+		for kx = 1 to 2
+			xLeg = legIns + (kx - 1) * (unitL - 2 * legIns)
+			xEnd = -outProj + (kx - 1) * (unitL + 2 * outProj)
+			dxo  = xEnd - xLeg
+			lenO = SQR (dxo * dxo + zTop * zTop)
+			for ky = 1 to 2
+				yLeg = legEdge + (ky - 1) * (unitW - 2 * legEdge)
+				ADDx xLeg
+				ADDy yLeg
+				ADDz zTop
+				ROTy 180 - ASN (dxo / lenO)
+					CYLIND lenO, 0.012
+				DEL 4
+			next ky
+			! 接地パッド
+			for ky = 1 to 2
+				yLeg = legEdge + (ky - 1) * (unitW - 2 * legEdge)
+				ADDx xEnd
+				ADDy yLeg
+					CYLIND 0.012, 0.022
+				DEL 2
+			next ky
+		next kx
+	endif
+RETURN
+
+
+! ---------------------------------------------------------------------------
+200:	! 感知フレーム（手すり）: ローカル原点から +X 方向へ gLen、天板上に建つ
+! ---------------------------------------------------------------------------
+	MATERIAL matGuard
+	ADDz hD
+		ADDy -guardS / 2
+			! 支柱 2本
+			BLOCK guardS, guardS, hGuard
+			ADDx gLen - guardS
+				BLOCK guardS, guardS, hGuard
+			DEL 1
+			! 上桟
+			ADDz hGuard - guardS
+				BLOCK gLen, guardS, guardS
+			DEL 1
+			! 中桟
+			ADDz railMid
+				BLOCK gLen, guardS, guardS
+			DEL 1
+			! 縦桟（詳細表示時のみ）
+			if lod >= 3 then
+				nV = MAX (1, INT ((gLen - 2 * guardS) / 0.25))
+				for v = 1 to nV
+					ADDx guardS + v * (gLen - 2 * guardS) / (nV + 1) - 0.008
+					ADDz railMid
+						BLOCK 0.016, guardS, hGuard - guardS - railMid
+					DEL 2
+				next v
+			endif
+		DEL 1
+	DEL 1
+RETURN
+
+
+! ---------------------------------------------------------------------------
+300:	! W キャスター（脚芯・床レベルが原点）
+! ---------------------------------------------------------------------------
+	MATERIAL matFrame
+	! 取付プレート
+	ADDz castTop - 0.008
+		ADDx -0.040
+		ADDy -0.040
+			BLOCK 0.080, 0.080, 0.008
+		DEL 2
+	DEL 1
+
+	if lod >= 2 then
+		! 旋回フォーク
+		ADDz castR
+			ADDx -0.030
+			ADDy -0.045
+				BLOCK 0.060, 0.010, castTop - castR - 0.008
+			DEL 2
+			ADDx -0.030
+			ADDy 0.035
+				BLOCK 0.060, 0.010, castTop - castR - 0.008
+			DEL 2
+		DEL 1
+	endif
+
+	! 車輪（W = 2輪）
+	MATERIAL matCaster
+	ADDz castR
+		ROTx -90
+			ADDz -0.035
+				CYLIND castW, castR
+			DEL 1
+			ADDz 0.005
+				CYLIND castW, castR
+			DEL 1
+		DEL 1
+	DEL 1
+RETURN
