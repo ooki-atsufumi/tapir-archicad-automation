@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GDL 引き継ぎ書</title>
+<style>
+  :root {
+    --ink: #1c2733;
+    --sub: #5a6b7d;
+    --line: #d9e1e8;
+    --bg: #f4f7f9;
+    --card: #ffffff;
+    --accent: #8a5a0f;
+    --accent-ink: #ffffff;
+    --warn-bg: #fff7e6;
+    --warn-line: #e6c26e;
+    --code-bg: #eef2f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+    line-height: 1.75; font-size: 16px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.hero {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px 32px; margin-bottom: 28px;
+  }
+  .hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: .02em; }
+  .hero p.lead { margin: 0; color: var(--sub); }
+  .hero .meta { margin-top: 14px; font-size: 13px; color: var(--sub); display: flex; gap: 18px; flex-wrap: wrap; }
+  .hero .meta span::before { content: "● "; color: var(--accent); font-size: 9px; vertical-align: 2px; }
+  section {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 32px; margin-bottom: 22px;
+  }
+  h2 { font-size: 20px; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); }
+  h2 .step {
+    display: inline-block; background: var(--accent); color: var(--accent-ink);
+    border-radius: 8px; font-size: 13px; padding: 2px 10px; margin-right: 10px; vertical-align: 2px;
+  }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 4px 0; }
+  code {
+    background: var(--code-bg); border-radius: 5px; padding: 1px 7px;
+    font-family: Consolas, "Courier New", monospace; font-size: 14px;
+  }
+  pre {
+    background: #22303c; color: #e8eef3; border-radius: 10px; padding: 14px 18px;
+    overflow-x: auto; font-size: 14px; line-height: 1.6;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14.5px; }
+  .scroll { overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #f5f0e6; white-space: nowrap; }
+  a { color: #0b5cad; }
+  .btn {
+    display: inline-block; background: var(--accent); color: var(--accent-ink) !important;
+    text-decoration: none; font-weight: 700; border-radius: 10px; padding: 12px 22px;
+    margin: 6px 8px 6px 0; box-shadow: 0 2px 4px rgba(0,0,0,.12);
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.sub { background: #40566b; }
+  .note {
+    background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px;
+    padding: 12px 16px; margin: 12px 0; font-size: 14.5px;
+  }
+  .note b:first-child { color: #8a6100; }
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 18px 0; }
+  .flow .box {
+    flex: 1 1 150px; min-width: 150px; border: 2px solid var(--accent); border-radius: 12px;
+    padding: 12px 14px; text-align: center; background: #faf6ee;
+  }
+  .flow .box b { display: block; margin-bottom: 4px; }
+  .flow .box small { color: var(--sub); }
+  .flow .arrow {
+    flex: 0 0 auto; align-self: center; padding: 0 10px;
+    color: var(--accent); font-size: 22px; font-weight: 700;
+  }
+  footer { color: var(--sub); font-size: 13px; text-align: center; margin-top: 30px; }
+  @media print {
+    body { background: #fff; }
+    section, header.hero { border: none; padding: 10px 0; }
+    .btn { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>GDL 引き継ぎ書</h1>
+  <p class="lead">Archicad のオブジェクト記述言語 <b>GDL（Geometric Description Language）</b>を、これから引き継いで使う方向けの手順書です。Archicad 内蔵エディタでの GDL オブジェクト作成と、Tapir＋Python による GDLパラメータの一括操作の両方をカバーします。</p>
+  <div class="meta">
+    <span>対象: Archicad 25〜29 をお使いの方（プログラミング知識は不要）</span>
+    <span>所要時間: 約20分</span>
+    <span>作成日: 2026-08-16</span>
+  </div>
+</header>
+
+<section>
+  <h2>全体像 — GDL でできること</h2>
+  <p>GDL は Archicad に最初から内蔵されている、パラメトリックなオブジェクト（家具・建具・部品など）を作るためのプログラミング言語です。使い方は大きく2段階あります。</p>
+  <div class="scroll"><table>
+    <tr><th>段階</th><th>できること</th><th>追加で必要なもの</th></tr>
+    <tr><td>① GDL オブジェクトを作る・編集する</td><td>寸法や材質をパラメータで変えられる自作オブジェクトの作成</td><td><b>なし（Archicad だけでOK）</b>＋ GDLマニュアル</td></tr>
+    <tr><td>② GDLパラメータを一括操作する</td><td>配置済みオブジェクトのパラメータ一覧のCSV出力・一括変更</td><td>Tapir アドオン ＋ Python ＋ 付属スクリプト</td></tr>
+  </table></div>
+  <div class="flow">
+    <div class="box"><b>GDLマニュアル</b><small>公式PDF（無料）<br>文法・コマンドの辞書</small></div>
+    <div class="arrow">＋</div>
+    <div class="box"><b>Archicad 内蔵<br>GDLエディタ</b><small>追加インストール不要<br>オブジェクト作成はここ</small></div>
+    <div class="arrow">＋</div>
+    <div class="box"><b>Tapir ＋ Python</b><small>（任意）一括操作用<br>パラメータCSV出力・一括変更</small></div>
+  </div>
+  <p class="note"><b>ポイント:</b> ①だけなら何もインストールせず今日から始められます。②も追加のPythonパッケージ（pip install）は<b>一切不要</b>で、すべて自分のPC内で完結します。モデルデータが外部に送信されることはありません。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 1</span>GDLマニュアルをダウンロードする</h2>
+  <p>GDL の文法・全コマンドが載っている公式リファレンスです。下のボタンから Graphisoft 公式サイトの PDF がそのままダウンロードできます。</p>
+  <p>
+    <a class="btn" href="https://help.graphisoft.com/AC/23/JPN/GDL.pdf" download>⬇ GDLリファレンスガイド（日本語版PDF・公式）</a>
+    <a class="btn sub" href="https://help.graphisoft.com/AC/23/INT/GDL.pdf" download>英語版PDF（公式）</a>
+  </p>
+  <ul>
+    <li>PDF版はArchicad 23時点の内容ですが、GDLの基本文法はその後もほぼ変わっていないため入門・辞書用途には十分です。</li>
+    <li>最新の英語版リファレンスはオンラインの <a href="https://gdl.graphisoft.com/reference-guide/" target="_blank" rel="noopener">GDL Center（Graphisoft公式）</a> で常時公開されています。</li>
+    <li>Archicad のヘルプメニュー（［ヘルプ］→ ドキュメント類）からも GDLリファレンスガイドを開けます。オフライン環境の場合はこちらが確実です。</li>
+  </ul>
+  <p class="note"><b>補足:</b> マニュアルは Graphisoft の著作物のため、この引き継ぎ書には埋め込まず<b>公式サイトへの直接ダウンロードリンク</b>にしています（クリックすればそのままPDFが保存できます）。リンク切れの際は「GDLリファレンスガイド PDF」で検索するか、Archicadのヘルプメニューから開いてください。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 2</span>Archicad だけで GDL を始める（追加インストール不要）</h2>
+  <p>GDL エディタは Archicad に内蔵されています。まず「パラメータで大きさと材質を変えられる直方体」を作って流れをつかみましょう。</p>
+  <h3>2-1. 新規オブジェクトを開く</h3>
+  <ol>
+    <li>Archicad のメニュー <b>［ファイル］→［ライブラリとオブジェクト］→［新規オブジェクト...］</b> を選択します（GDLエディタが開きます）。</li>
+    <li>左上の「詳細」で サブタイプ＝<b>オブジェクト</b> のままでOKです。</li>
+  </ol>
+  <h3>2-2. 3Dスクリプトを書く</h3>
+  <p>左側のリストから <b>3Dスクリプト</b> を開き、次を貼り付けます。</p>
+  <pre><code>! パラメータ化した直方体
+! a=幅, b=奥行, zzyzx=高さ (Archicadの組み込みパラメータ)
+MATERIAL "塗装-白"
+BLOCK a, b, zzyzx</code></pre>
+  <h3>2-3. 2Dスクリプトを書く</h3>
+  <p>同様に <b>2Dスクリプト</b> を開き、次を貼り付けます（3D形状を平面図に投影する定番の1行です）。</p>
+  <pre><code>PROJECT2 3, 270, 2</code></pre>
+  <h3>2-4. チェック → 保存 → 配置</h3>
+  <ol>
+    <li>エディタ上部の<b>チェックボタン（✓）</b>でスクリプトの文法エラーがないことを確認します。</li>
+    <li><b>［ファイル］→［保存］</b>で名前を付けて<b>埋め込みライブラリ</b>に保存します（このプロジェクト内で使えるようになります）。</li>
+    <li>ツールボックスの<b>オブジェクトツール</b>で配置し、設定ダイアログでパラメータ a / b / zzyzx を変えると形が変わることを確認します。</li>
+  </ol>
+  <p>ここまでできたら、あとはマニュアル（ステップ1）を辞書代わりに、<code>PRISM_</code>（多角形柱）や <code>REVOLVE</code>（回転体）、<code>FOR〜NEXT</code>（繰り返し）などを追加していくのが定石です。既存の類似オブジェクトを開いてスクリプトを読むのも近道です（オブジェクト設定ダイアログから開けます）。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 3</span>（任意）一括操作の準備 — Python と Tapir</h2>
+  <p>配置済みオブジェクトの GDLパラメータを一覧化・一括変更したい場合のみ、次の2つを入れます。</p>
+  <h3>3-1. Python のインストール</h3>
+  <ol>
+    <li><a href="https://www.python.org/downloads/" target="_blank" rel="noopener">https://www.python.org/downloads/</a> からインストーラーをダウンロード。</li>
+    <li>インストーラー最初の画面で<b>必ず「Add python.exe to PATH」にチェック</b>を入れてから「Install Now」（ここが一番のつまずきポイントです）。</li>
+    <li>コマンドプロンプトで <code>python --version</code> と入力し、バージョンが表示されれば成功（Mac はターミナルで <code>python3 --version</code>）。</li>
+  </ol>
+  <h3>3-2. Tapir アドオンのインストール</h3>
+  <p>Tapir は Archicad に自動化用のJSONコマンドを追加する無料のオープンソースアドオンです（開発: ENZYME-APD）。<b>お使いの Archicad のバージョンと OS に合ったファイルを1つ</b>ダウンロードしてください。</p>
+  <div class="scroll"><table>
+    <tr><th>Archicad バージョン</th><th>Windows</th><th>Mac</th></tr>
+    <tr><td>Archicad 29</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC29_Win.apx">TapirAddOn_AC29_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC29_Mac.zip">TapirAddOn_AC29_Mac.zip</a></td></tr>
+    <tr><td>Archicad 28</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC28_Win.apx">TapirAddOn_AC28_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC28_Mac.zip">TapirAddOn_AC28_Mac.zip</a></td></tr>
+    <tr><td>Archicad 27</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC27_Win.apx">TapirAddOn_AC27_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC27_Mac.zip">TapirAddOn_AC27_Mac.zip</a></td></tr>
+    <tr><td>Archicad 26</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC26_Win.apx">TapirAddOn_AC26_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC26_Mac.zip">TapirAddOn_AC26_Mac.zip</a></td></tr>
+    <tr><td>Archicad 25</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC25_Win.apx">TapirAddOn_AC25_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC25_Mac.zip">TapirAddOn_AC25_Mac.zip</a></td></tr>
+  </table></div>
+  <ol>
+    <li>Mac は zip をダブルクリックで解凍しておきます（.bundle ができます）。Windows は .apx のままでOK。</li>
+    <li>Archicad の <b>［オプション］→［アドオンマネージャー...］</b> →<b>［有効なアドオンのリストを編集］</b>で<b>［追加...］</b>→ ダウンロードしたファイルを選択 →「OK」。</li>
+    <li>メニューバーに <b>「Tapir」メニューが表示されれば成功</b>です。</li>
+  </ol>
+  <p>一覧ページ: <a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest" target="_blank" rel="noopener">Tapir 最新リリース（GitHub）</a></p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 4</span>（任意）GDLパラメータ操作スクリプト</h2>
+  <p>下のボタンを押すと、スクリプト本体がそのままダウンロードされます（このHTMLファイル内に埋め込んであるため、ネット接続がなくてもダウンロードできます）。追加のPythonパッケージは不要です。</p>
+  <p>
+    <a class="btn" href="data:text/x-python;charset=utf-8;base64,IyAtKi0gY29kaW5nOiB1dGYtOCAtKi0KIiIiCkdETOODkeODqeODoeODvOOCv+aTjeS9nC5weSDigJQgQXJjaGljYWQgKyBUYXBpciDjgqLjg4njgqrjg7PjgavjgojjgosgR0RM44OR44Op44Oh44O844K/44Gu5LiA6Kan5Ye65Yqb44O75LiA5ous5aSJ5pu0CgpBcmNoaWNhZCDjgafpgbjmip7kuK3jga7opoHntKAo44Kq44OW44K444Kn44Kv44OI44O744OJ44Ki44O756qT44O744Op44Oz44OX562JKeOBriBHREzjg5Hjg6njg6Hjg7zjgr/jgpIKQ1NWIOOBq+S4gOimp+WHuuWKm+OBl+OBvuOBmeOAgi0tc2V0IOOCkuS7mOOBkeOCi+OBqOS4gOaLrOWkieabtOOCguOBp+OBjeOBvuOBmSjml6Llrprjga/jg4njg6njgqTjg6njg7Mp44CCCgrlv4XopoHjgarjgoLjga46CiAgLSBBcmNoaWNhZCAyNSDku6XpmY0gKOODl+ODreOCuOOCp+OCr+ODiOOCkumWi+OBjeOAgeWvvuixoeimgee0oOOCkumBuOaKnuOBl+OBpuOBiuOBjykKICAtIFRhcGlyIOOCouODieOCquODsyAoaHR0cHM6Ly9naXRodWIuY29tL0VOWllNRS1BUEQvdGFwaXItYXJjaGljYWQtYXV0b21hdGlvbi9yZWxlYXNlcy9sYXRlc3QpCiAgLSBQeXRob24gMy44IOS7pemZjSAo6L+95Yqg44OR44OD44Kx44O844K45LiN6KaB44CC5qiZ5rqW44Op44Kk44OW44Op44Oq44Gu44G/44Gn5YuV5L2cKQoK5L2/44GE5pa5OgogIHB5dGhvbiBHREzjg5Hjg6njg6Hjg7zjgr/mk43kvZwucHkKICAgICAg4oCmIOmBuOaKnuS4reOBruimgee0oOOBruWFqEdETOODkeODqeODoeODvOOCv+OCkiBDU1Yg44Gr5Ye65YqbKOiqreOBv+WPluOCiuOBruOBv+ODu+WuieWFqCkKCiAgcHl0aG9uIEdETOODkeODqeODoeODvOOCv+aTjeS9nC5weSAtLXR5cGUgT2JqZWN0CiAgICAgIOKApiDpgbjmip7jga7ku6Pjgo/jgorjgavjg5fjg63jgrjjgqfjgq/jg4jlhoXjga7mjIflrprnqK7liKUoT2JqZWN0L0Rvb3IvV2luZG93L0xhbXAp44KS5a++6LGh44Gr44GZ44KLCgogIHB5dGhvbiBHREzjg5Hjg6njg6Hjg7zjgr/mk43kvZwucHkgLS1zZXQgZ3NfY29udF9wZW49OTUKICAgICAg4oCmIOWkieabtOWGheWuueOBruODl+ODrOODk+ODpeODvCjjg4njg6njgqTjg6njg7Mp44CC44G+44Gg5L2V44KC5aSJ5pu044GX44G+44Gb44KTCgogIHB5dGhvbiBHREzjg5Hjg6njg6Hjg7zjgr/mk43kvZwucHkgLS1zZXQgZ3NfY29udF9wZW49OTUgLS1hcHBseQogICAgICDigKYg6YG45oqe5Lit44Gu6KaB57Sg44Gu44OR44Op44Oh44O844K/44KS5a6f6Zqb44Gr5aSJ5pu044GZ44KLCiAgICAgICAgKOWkieabtOW+jOOCgiBBcmNoaWNhZCDjga5b5YWD44Gr5oi744GZXeOBp+WPluOCiua2iOOBm+OBvuOBmSkKCiAg44Gd44Gu44G744GLOiAtLW91dGRpciDlh7rlipvlhYggLyAtLXBvcnQg44Od44O844OI55Wq5Y+3IC8gLS1uby1wYXVzZQoK44Kz44Oe44Oz44OJ5LuV5qeYOiBodHRwczovL2VuenltZS1hcGQuZ2l0aHViLmlvL3RhcGlyLWFyY2hpY2FkLWF1dG9tYXRpb24vYXJjaGljYWQtYWRkb24KIiIiCgppbXBvcnQgYXJncGFyc2UKaW1wb3J0IGNzdgppbXBvcnQgZGF0ZXRpbWUKaW1wb3J0IGpzb24KaW1wb3J0IG9zCmltcG9ydCBzeXMKaW1wb3J0IHVybGxpYi5lcnJvcgppbXBvcnQgdXJsbGliLnJlcXVlc3QKCkNIVU5LX1NJWkUgPSAxMDAgICMgMeWbnuOBruOCs+ODnuODs+ODieWRvOOBs+WHuuOBl+OBp+WHpueQhuOBmeOCi+imgee0oOaVsAoKCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCiMgQXJjaGljYWQgSlNPTiDjgqTjg7Pjgr/jg7zjg5Xjgqfjg7zjgrnjgajjga7pgJrkv6EKIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCmNsYXNzIEFyY2hpY2FkQ29ubmVjdGlvbjoKICAgIGRlZiBfX2luaXRfXyhzZWxmLCBob3N0LCBwb3J0KToKICAgICAgICBzZWxmLnVybCA9ICd7fTp7fScuZm9ybWF0KGhvc3QsIHBvcnQpCgogICAgZGVmIHJ1bihzZWxmLCBjb21tYW5kLCBwYXJhbWV0ZXJzPU5vbmUpOgogICAgICAgIHJlcXVlc3QgPSB1cmxsaWIucmVxdWVzdC5SZXF1ZXN0KHNlbGYudXJsKQogICAgICAgIHJlcXVlc3QuYWRkX2hlYWRlcignQ29udGVudC1UeXBlJywgJ2FwcGxpY2F0aW9uL2pzb24nKQogICAgICAgIGJvZHkgPSBqc29uLmR1bXBzKHsnY29tbWFuZCc6IGNvbW1hbmQsICdwYXJhbWV0ZXJzJzogcGFyYW1ldGVycyBvciB7fX0pLmVuY29kZSgndXRmOCcpCiAgICAgICAgcmVzcG9uc2UgPSBqc29uLmxvYWRzKHVybGxpYi5yZXF1ZXN0LnVybG9wZW4ocmVxdWVzdCwgYm9keSkucmVhZCgpKQogICAgICAgIGlmIG5vdCByZXNwb25zZS5nZXQoJ3N1Y2NlZWRlZCcpOgogICAgICAgICAgICBlcnJvciA9IHJlc3BvbnNlLmdldCgnZXJyb3InLCB7fSkKICAgICAgICAgICAgcmFpc2UgUnVudGltZUVycm9yKCfjgrPjg57jg7Pjg4kge30g44GM5aSx5pWX44GX44G+44GX44GfOiB7fScuZm9ybWF0KAogICAgICAgICAgICAgICAgY29tbWFuZCwgZXJyb3IuZ2V0KCdtZXNzYWdlJywganNvbi5kdW1wcyhlcnJvciwgZW5zdXJlX2FzY2lpPUZhbHNlKSkpKQogICAgICAgIHJldHVybiByZXNwb25zZS5nZXQoJ3Jlc3VsdCcsIHt9KQoKICAgIGRlZiBydW5fdGFwaXIoc2VsZiwgY29tbWFuZCwgcGFyYW1ldGVycz1Ob25lKToKICAgICAgICByZXN1bHQgPSBzZWxmLnJ1bignQVBJLkV4ZWN1dGVBZGRPbkNvbW1hbmQnLCB7CiAgICAgICAgICAgICdhZGRPbkNvbW1hbmRJZCc6IHsKICAgICAgICAgICAgICAgICdjb21tYW5kTmFtZXNwYWNlJzogJ1RhcGlyQ29tbWFuZCcsCiAgICAgICAgICAgICAgICAnY29tbWFuZE5hbWUnOiBjb21tYW5kLAogICAgICAgICAgICB9LAogICAgICAgICAgICAnYWRkT25Db21tYW5kUGFyYW1ldGVycyc6IHBhcmFtZXRlcnMgb3Ige30sCiAgICAgICAgfSkKICAgICAgICByZXR1cm4gcmVzdWx0LmdldCgnYWRkT25Db21tYW5kUmVzcG9uc2UnLCB7fSkKCgpkZWYgY29ubmVjdChob3N0LCBwb3J0KToKICAgIGNvbm4gPSBBcmNoaWNhZENvbm5lY3Rpb24oaG9zdCwgcG9ydCkKICAgIHRyeToKICAgICAgICBpbmZvID0gY29ubi5ydW4oJ0FQSS5HZXRQcm9kdWN0SW5mbycpCiAgICBleGNlcHQgdXJsbGliLmVycm9yLlVSTEVycm9yIGFzIGU6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgKICAgICAgICAgICAgJ0FyY2hpY2FkIOOBq+aOpee2muOBp+OBjeOBvuOBm+OCk+OBp+OBl+OBnyAoe306e30p44CCXG4nCiAgICAgICAgICAgICcgIC0gQXJjaGljYWQg44GM6LW35YuV44GX44Gm44GE44Gm44OX44Ot44K444Kn44Kv44OI44GM6ZaL44GE44Gm44GE44KL44GL56K66KqN44GX44Gm44GP44Gg44GV44GE44CCXG4nCiAgICAgICAgICAgICcgIC0gQXJjaGljYWQg44KS6KSH5pWw6LW35YuV44GX44Gm44GE44KL5aC05ZCI44GvIC0tcG9ydCAxOTcyNCDjga7jgojjgYbjgavmjIflrprjgZfjgabjgY/jgaDjgZXjgYTjgIJcbicKICAgICAgICAgICAgJyAg6Kmz57SwOiB7fScuZm9ybWF0KGhvc3QsIHBvcnQsIGUpKQogICAgcHJpbnQoJ0FyY2hpY2FkIHt9IChidWlsZCB7fSkg44Gr5o6l57aa44GX44G+44GX44Gf44CCJy5mb3JtYXQoCiAgICAgICAgaW5mby5nZXQoJ3ZlcnNpb24nLCAnPycpLCBpbmZvLmdldCgnYnVpbGROdW1iZXInLCAnPycpKSkKICAgIHRyeToKICAgICAgICB0YXBpciA9IGNvbm4ucnVuX3RhcGlyKCdHZXRBZGRPblZlcnNpb24nKQogICAgICAgIHByaW50KCdUYXBpciDjgqLjg4njgqrjg7Mgdnt9IOOCkueiuuiqjeOBl+OBvuOBl+OBn+OAgicuZm9ybWF0KHRhcGlyLmdldCgndmVyc2lvbicsICc/JykpKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KAogICAgICAgICAgICAnVGFwaXIg44Ki44OJ44Kq44Oz44GM6KaL44Gk44GL44KK44G+44Gb44KT44Gn44GX44Gf44CCXG4nCiAgICAgICAgICAgICcgIGh0dHBzOi8vZ2l0aHViLmNvbS9FTlpZTUUtQVBEL3RhcGlyLWFyY2hpY2FkLWF1dG9tYXRpb24vcmVsZWFzZXMvbGF0ZXN0IOOBi+OCiVxuJwogICAgICAgICAgICAnICDjgYrkvb/jgYTjga4gQXJjaGljYWQg44OQ44O844K444On44Oz44Gr5ZCI44Gj44Gf44OV44Kh44Kk44Or44KS44OA44Km44Oz44Ot44O844OJ44GX44CBXG4nCiAgICAgICAgICAgICcgIFvjgqrjg5fjgrfjg6fjg7MgPiDjgqLjg4njgqrjg7Pjg57jg43jg7zjgrjjg6Pjg7xdIOOBi+OCieOCpOODs+OCueODiOODvOODq+OBl+OBpuOBj+OBoOOBleOBhOOAgicpCiAgICByZXR1cm4gY29ubgoKCmRlZiBnZXRfdGFyZ2V0X2VsZW1lbnRzKGNvbm4sIGVsZW1lbnRfdHlwZSk6CiAgICBpZiBlbGVtZW50X3R5cGU6CiAgICAgICAgZWxlbWVudHMgPSBjb25uLnJ1bignQVBJLkdldEVsZW1lbnRzQnlUeXBlJywgeydlbGVtZW50VHlwZSc6IGVsZW1lbnRfdHlwZX0pLmdldCgnZWxlbWVudHMnLCBbXSkKICAgICAgICBzb3VyY2UgPSAn56iu5YilIHt9IOOBruWFqOimgee0oCcuZm9ybWF0KGVsZW1lbnRfdHlwZSkKICAgIGVsc2U6CiAgICAgICAgZWxlbWVudHMgPSBjb25uLnJ1bl90YXBpcignR2V0U2VsZWN0ZWRFbGVtZW50cycpLmdldCgnZWxlbWVudHMnLCBbXSkKICAgICAgICBzb3VyY2UgPSAn6YG45oqe5Lit44Gu6KaB57SgJwogICAgaWYgbm90IGVsZW1lbnRzOgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoCiAgICAgICAgICAgICflr77osaHopoHntKDjgYww5Lu244Gn44GX44Gf44CCQXJjaGljYWQg44Gn44Kq44OW44K444Kn44Kv44OI44O744OJ44Ki44O756qT44Gq44Gp44KS6YG45oqe44GX44Gm44GL44KJ5a6f6KGM44GZ44KL44GL44CBXG4nCiAgICAgICAgICAgICctLXR5cGUgT2JqZWN0IOOBruOCiOOBhuOBq+eoruWIpeOCkuaMh+WumuOBl+OBpuOBj+OBoOOBleOBhOOAgicpCiAgICBwcmludCgn5a++6LGhOiB7fSAoe30g5Lu2KScuZm9ybWF0KHNvdXJjZSwgbGVuKGVsZW1lbnRzKSkpCiAgICByZXR1cm4gZWxlbWVudHMKCgpkZWYgZ2V0X2dkbF9wYXJhbWV0ZXJzKGNvbm4sIGVsZW1lbnRzKToKICAgICIiIuimgee0oOOBlOOBqOOBriBHREzjg5Hjg6njg6Hjg7zjgr/jg6rjgrnjg4jjgpLov5TjgZnjgIIiIiIKICAgIHJlc3VsdHMgPSBbXQogICAgZm9yIHN0YXJ0IGluIHJhbmdlKDAsIGxlbihlbGVtZW50cyksIENIVU5LX1NJWkUpOgogICAgICAgIGNodW5rID0gZWxlbWVudHNbc3RhcnQ6c3RhcnQgKyBDSFVOS19TSVpFXQogICAgICAgIHJlc3BvbnNlID0gY29ubi5ydW5fdGFwaXIoJ0dldEdETFBhcmFtZXRlcnNPZkVsZW1lbnRzJywgeydlbGVtZW50cyc6IGNodW5rfSkKICAgICAgICByZXN1bHRzLmV4dGVuZChyZXNwb25zZS5nZXQoJ2dkbFBhcmFtZXRlcnNPZkVsZW1lbnRzJywgW10pKQogICAgICAgIHByaW50KCcgIOWPluW+l+S4rS4uLiB7fS97fSDku7YnLmZvcm1hdChtaW4oc3RhcnQgKyBDSFVOS19TSVpFLCBsZW4oZWxlbWVudHMpKSwgbGVuKGVsZW1lbnRzKSkpCiAgICByZXR1cm4gcmVzdWx0cwoKCmRlZiBmb3JtYXRfdmFsdWUodmFsdWUpOgogICAgaWYgaXNpbnN0YW5jZSh2YWx1ZSwgKGxpc3QsIGRpY3QpKToKICAgICAgICByZXR1cm4ganNvbi5kdW1wcyh2YWx1ZSwgZW5zdXJlX2FzY2lpPUZhbHNlKQogICAgaWYgaXNpbnN0YW5jZSh2YWx1ZSwgYm9vbCk6CiAgICAgICAgcmV0dXJuICd0cnVlJyBpZiB2YWx1ZSBlbHNlICdmYWxzZScKICAgIHJldHVybiB2YWx1ZSBpZiB2YWx1ZSBpcyBub3QgTm9uZSBlbHNlICcnCgoKZGVmIGV4cG9ydF9jc3YoZWxlbWVudHMsIGdkbF9saXN0cywgb3V0ZGlyKToKICAgIHN0YW1wID0gZGF0ZXRpbWUuZGF0ZXRpbWUubm93KCkuc3RyZnRpbWUoJyVZJW0lZC0lSCVNJVMnKQogICAgcGF0aCA9IG9zLnBhdGguam9pbihvdXRkaXIsICdHREzjg5Hjg6njg6Hjg7zjgr/kuIDopqdfe30uY3N2Jy5mb3JtYXQoc3RhbXApKQogICAgaGVhZGVyID0gWyfopoHntKBObycsICdHVUlEJywgJ+ODkeODqeODoeODvOOCv+WQjScsICflnosnLCAn5YCkJywgJ+ODreODg+OCrycsICfphY3liJco5qyh5YWDMSknLCAn6YWN5YiXKOasoeWFgzIpJ10KICAgIGNvdW50ID0gMAogICAgd2l0aCBvcGVuKHBhdGgsICd3JywgbmV3bGluZT0nJywgZW5jb2Rpbmc9J3V0Zi04LXNpZycpIGFzIGY6CiAgICAgICAgd3JpdGVyID0gY3N2LndyaXRlcihmKQogICAgICAgIHdyaXRlci53cml0ZXJvdyhoZWFkZXIpCiAgICAgICAgZm9yIGksIChlbGVtZW50LCBlbnRyeSkgaW4gZW51bWVyYXRlKHppcChlbGVtZW50cywgZ2RsX2xpc3RzKSk6CiAgICAgICAgICAgIGd1aWQgPSBlbGVtZW50LmdldCgnZWxlbWVudElkJywge30pLmdldCgnZ3VpZCcsICcnKQogICAgICAgICAgICBpZiBub3QgaXNpbnN0YW5jZShlbnRyeSwgZGljdCkgb3IgJ3BhcmFtZXRlcnMnIG5vdCBpbiBlbnRyeToKICAgICAgICAgICAgICAgIHdyaXRlci53cml0ZXJvdyhbaSArIDEsIGd1aWQsICcoR0RM44OR44Op44Oh44O844K/44Gq44GX44CB44G+44Gf44Gv5Y+W5b6X44Ko44Op44O8KScsICcnLCAnJywgJycsICcnLCAnJ10pCiAgICAgICAgICAgICAgICBjb250aW51ZQogICAgICAgICAgICBmb3IgcGFyYW0gaW4gZW50cnlbJ3BhcmFtZXRlcnMnXToKICAgICAgICAgICAgICAgIHdyaXRlci53cml0ZXJvdyhbCiAgICAgICAgICAgICAgICAgICAgaSArIDEsIGd1aWQsCiAgICAgICAgICAgICAgICAgICAgcGFyYW0uZ2V0KCduYW1lJywgJycpLAogICAgICAgICAgICAgICAgICAgIHBhcmFtLmdldCgndHlwZScsICcnKSwKICAgICAgICAgICAgICAgICAgICBmb3JtYXRfdmFsdWUocGFyYW0uZ2V0KCd2YWx1ZScpKSwKICAgICAgICAgICAgICAgICAgICAn44Ot44OD44KvJyBpZiBwYXJhbS5nZXQoJ2lzTG9ja2VkJykgZWxzZSAnJywKICAgICAgICAgICAgICAgICAgICBwYXJhbS5nZXQoJ2RpbWVuc2lvbjEnLCAnJyksCiAgICAgICAgICAgICAgICAgICAgcGFyYW0uZ2V0KCdkaW1lbnNpb24yJywgJycpLAogICAgICAgICAgICAgICAgXSkKICAgICAgICAgICAgICAgIGNvdW50ICs9IDEKICAgIHByaW50KCflh7rlipvjgZfjgb7jgZfjgZ86IHt9ICjjg5Hjg6njg6Hjg7zjgr8ge30g6KGMKScuZm9ybWF0KHBhdGgsIGNvdW50KSkKICAgIHJldHVybiBwYXRoCgoKZGVmIHBhcnNlX3NldF9hcmd1bWVudChzZXRfYXJnKToKICAgICIiIi0tc2V0IG5hbWU9dmFsdWUg44KSICjlkI3liY0sIOWApCkg44Gr5YiG6Kej44GZ44KL44CC5YCk44GvSlNPTuOBqOOBl+OBpuino+mHiOOCkuippuOBv+OCi+OAgiIiIgogICAgaWYgJz0nIG5vdCBpbiBzZXRfYXJnOgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoJy0tc2V0IOOBryDjg5Hjg6njg6Hjg7zjgr/lkI095YCkIOOBruW9ouW8j+OBp+aMh+WumuOBl+OBpuOBj+OBoOOBleOBhOOAguS+izogLS1zZXQgZ3NfY29udF9wZW49OTUnKQogICAgbmFtZSwgcmF3ID0gc2V0X2FyZy5zcGxpdCgnPScsIDEpCiAgICBuYW1lID0gbmFtZS5zdHJpcCgpCiAgICByYXcgPSByYXcuc3RyaXAoKQogICAgdHJ5OgogICAgICAgIHZhbHVlID0ganNvbi5sb2FkcyhyYXcpICAjIOaVsOWApOODu3RydWUvZmFsc2Xjg7si5paH5a2X5YiXIuODu1vphY3liJddIOOCkuino+mHiAogICAgZXhjZXB0IFZhbHVlRXJyb3I6CiAgICAgICAgdmFsdWUgPSByYXcgICAgICAgICAgICAgICMg44Gd44Gu44G+44G+5paH5a2X5YiX44Go44GX44Gm5omx44GGCiAgICByZXR1cm4gbmFtZSwgdmFsdWUKCgpkZWYgc2V0X3BhcmFtZXRlcihjb25uLCBlbGVtZW50cywgZ2RsX2xpc3RzLCBuYW1lLCB2YWx1ZSwgYXBwbHlfY2hhbmdlcyk6CiAgICAjIOWvvuixoeODkeODqeODoeODvOOCv+OCkuaMgeOBpOimgee0oOOBoOOBkeOBq+e1nuOCiui+vOOCgCjjg63jg4Pjgq/kuK3jga/pmaTlpJYpCiAgICB0YXJnZXRzID0gW10KICAgIGZvciBlbGVtZW50LCBlbnRyeSBpbiB6aXAoZWxlbWVudHMsIGdkbF9saXN0cyk6CiAgICAgICAgcGFyYW1zID0gZW50cnkuZ2V0KCdwYXJhbWV0ZXJzJywgW10pIGlmIGlzaW5zdGFuY2UoZW50cnksIGRpY3QpIGVsc2UgW10KICAgICAgICBtYXRjaCA9IG5leHQoKHAgZm9yIHAgaW4gcGFyYW1zIGlmIHAuZ2V0KCduYW1lJykgPT0gbmFtZSksIE5vbmUpCiAgICAgICAgaWYgbWF0Y2ggaXMgTm9uZToKICAgICAgICAgICAgY29udGludWUKICAgICAgICBpZiBtYXRjaC5nZXQoJ2lzTG9ja2VkJyk6CiAgICAgICAgICAgIHByaW50KCcgIOOCueOCreODg+ODlzoge30g44Gv44Ot44OD44Kv5LitIChHVUlEIHt9KScuZm9ybWF0KAogICAgICAgICAgICAgICAgbmFtZSwgZWxlbWVudC5nZXQoJ2VsZW1lbnRJZCcsIHt9KS5nZXQoJ2d1aWQnLCAnJylbOjhdKSkKICAgICAgICAgICAgY29udGludWUKICAgICAgICB0YXJnZXRzLmFwcGVuZCgoZWxlbWVudCwgbWF0Y2guZ2V0KCd2YWx1ZScpKSkKCiAgICBpZiBub3QgdGFyZ2V0czoKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KCfjg5Hjg6njg6Hjg7zjgr/jgIx7feOAjeOCkuaMgeOBpOWkieabtOWPr+iDveOBquimgee0oOOBjOOBguOCiuOBvuOBm+OCk+OBp+OBl+OBn+OAglxuJwogICAgICAgICAgICAgICAgICAgICAgICAgJ0NTVuS4gOimpyjlvJXmlbDjgarjgZflrp/ooYwp44Gn5q2j44GX44GE44OR44Op44Oh44O844K/5ZCN44KS56K66KqN44GX44Gm44GP44Gg44GV44GE44CCJy5mb3JtYXQobmFtZSkpCgogICAgcHJpbnQoKQogICAgcHJpbnQoJ+WkieabtOWGheWuuTog44OR44Op44Oh44O844K/44CMe33jgI0g4oaSIHt9Jy5mb3JtYXQobmFtZSwgZm9ybWF0X3ZhbHVlKHZhbHVlKSkpCiAgICBmb3IgZWxlbWVudCwgY3VycmVudCBpbiB0YXJnZXRzWzoxMF06CiAgICAgICAgcHJpbnQoJyAgR1VJRCB7fS4uLjog54++5Zyo5YCkIHt9IOKGkiDmlrDjgZfjgYTlgKQge30nLmZvcm1hdCgKICAgICAgICAgICAgZWxlbWVudC5nZXQoJ2VsZW1lbnRJZCcsIHt9KS5nZXQoJ2d1aWQnLCAnJylbOjhdLAogICAgICAgICAgICBmb3JtYXRfdmFsdWUoY3VycmVudCksIGZvcm1hdF92YWx1ZSh2YWx1ZSkpKQogICAgaWYgbGVuKHRhcmdldHMpID4gMTA6CiAgICAgICAgcHJpbnQoJyAgLi4uIOOBu+OBiyB7fSDku7YnLmZvcm1hdChsZW4odGFyZ2V0cykgLSAxMCkpCgogICAgaWYgbm90IGFwcGx5X2NoYW5nZXM6CiAgICAgICAgcHJpbnQoKQogICAgICAgIHByaW50KCfigLsg44OJ44Op44Kk44Op44Oz44Gu44Gf44KB5aSJ5pu044GX44Gm44GE44G+44Gb44KT44CC5a6f6Zqb44Gr5aSJ5pu044GZ44KL44Gr44GvIC0tYXBwbHkg44KS5LuY44GR44Gm5YaN5a6f6KGM44GX44Gm44GP44Gg44GV44GE44CCJykKICAgICAgICByZXR1cm4KCiAgICByZXNwb25zZSA9IGNvbm4ucnVuX3RhcGlyKCdTZXRHRExQYXJhbWV0ZXJzT2ZFbGVtZW50cycsIHsKICAgICAgICAnZWxlbWVudHNXaXRoR0RMUGFyYW1ldGVycyc6IFt7CiAgICAgICAgICAgICdlbGVtZW50SWQnOiBlbGVtZW50WydlbGVtZW50SWQnXSwKICAgICAgICAgICAgJ2dkbFBhcmFtZXRlcnMnOiBbeyduYW1lJzogbmFtZSwgJ3ZhbHVlJzogdmFsdWV9XSwKICAgICAgICB9IGZvciBlbGVtZW50LCBfIGluIHRhcmdldHNdfSkKICAgIHJlc3VsdHMgPSByZXNwb25zZS5nZXQoJ2V4ZWN1dGlvblJlc3VsdHMnLCBbXSkKICAgIG9rID0gc3VtKDEgZm9yIHIgaW4gcmVzdWx0cyBpZiBpc2luc3RhbmNlKHIsIGRpY3QpIGFuZCByLmdldCgnc3VjY2VzcycpKQogICAgZmFpbGVkID0gbGVuKHJlc3VsdHMpIC0gb2sKICAgIHByaW50KCflpInmm7TjgZfjgb7jgZfjgZ86IOaIkOWKnyB7fSDku7YgLyDlpLHmlZcge30g5Lu2Jy5mb3JtYXQob2ssIGZhaWxlZCkpCiAgICBmb3IgciBpbiByZXN1bHRzOgogICAgICAgIGlmIGlzaW5zdGFuY2UociwgZGljdCkgYW5kIG5vdCByLmdldCgnc3VjY2VzcycpOgogICAgICAgICAgICBwcmludCgnICDlpLHmlZfoqbPntLA6IHt9Jy5mb3JtYXQoanNvbi5kdW1wcyhyLmdldCgnZXJyb3InLCByKSwgZW5zdXJlX2FzY2lpPUZhbHNlKSkpCiAgICBwcmludCgn4oC7IEFyY2hpY2FkIOWBtOOBriBb57eo6ZuGID4g5YWD44Gr5oi744GZXSDjgafjgZPjga7lpInmm7Tjga/lj5bjgormtojjgZvjgb7jgZnjgIInKQoKCmRlZiBtYWluKCk6CiAgICBwYXJzZXIgPSBhcmdwYXJzZS5Bcmd1bWVudFBhcnNlcihkZXNjcmlwdGlvbj0nQXJjaGljYWQgKyBUYXBpciDjgavjgojjgosgR0RM44OR44Op44Oh44O844K/44Gu5LiA6Kan5Ye65Yqb44O75LiA5ous5aSJ5pu0JykKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoJy0taG9zdCcsIGRlZmF1bHQ9J2h0dHA6Ly8xMjcuMC4wLjEnKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgnLS1wb3J0JywgdHlwZT1pbnQsIGRlZmF1bHQ9MTk3MjMpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLXR5cGUnLCBkZXN0PSdlbGVtZW50X3R5cGUnLCBkZWZhdWx0PU5vbmUsCiAgICAgICAgICAgICAgICAgICAgICAgIGhlbHA9J+mBuOaKnuOBruS7o+OCj+OCiuOBq+imgee0oOeoruWIpeOBp+WvvuixoeaMh+WumiAoT2JqZWN0IC8gRG9vciAvIFdpbmRvdyAvIExhbXAg44Gq44GpKScpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLXNldCcsIGRlc3Q9J3NldF9hcmcnLCBkZWZhdWx0PU5vbmUsIG1ldGF2YXI9J+WQjeWJjT3lgKQnLAogICAgICAgICAgICAgICAgICAgICAgICBoZWxwPSfjg5Hjg6njg6Hjg7zjgr/jgpLkuIDmi6zlpInmm7TjgZnjgosgKOS+izogLS1zZXQgZ3NfY29udF9wZW49OTUp44CC5pei5a6a44Gv44OJ44Op44Kk44Op44OzJykKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoJy0tYXBwbHknLCBhY3Rpb249J3N0b3JlX3RydWUnLCBoZWxwPSctLXNldCDjga7lpInmm7TjgpLlrp/pmpvjgavpgannlKjjgZnjgosnKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgnLS1vdXRkaXInLCBkZWZhdWx0PU5vbmUsIGhlbHA9J0NTVuOBruWHuuWKm+WFiOODleOCqeODq+ODgCAo55yB55Wl5pmC44Gv44K544Kv44Oq44OX44OI44Go5ZCM44GY5aC05omAKScpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLW5vLXBhdXNlJywgYWN0aW9uPSdzdG9yZV90cnVlJywgaGVscD0n57WC5LqG5pmC44GrRW50ZXLlhaXlipvjgpLlvoXjgZ/jgarjgYQnKQogICAgYXJncywgXyA9IHBhcnNlci5wYXJzZV9rbm93bl9hcmdzKCkKCiAgICBjb25uID0gY29ubmVjdChhcmdzLmhvc3QsIGFyZ3MucG9ydCkKICAgIGVsZW1lbnRzID0gZ2V0X3RhcmdldF9lbGVtZW50cyhjb25uLCBhcmdzLmVsZW1lbnRfdHlwZSkKICAgIGdkbF9saXN0cyA9IGdldF9nZGxfcGFyYW1ldGVycyhjb25uLCBlbGVtZW50cykKCiAgICBvdXRkaXIgPSBhcmdzLm91dGRpciBvciBvcy5wYXRoLmRpcm5hbWUob3MucGF0aC5hYnNwYXRoKF9fZmlsZV9fKSkKICAgIG9zLm1ha2VkaXJzKG91dGRpciwgZXhpc3Rfb2s9VHJ1ZSkKICAgIGV4cG9ydF9jc3YoZWxlbWVudHMsIGdkbF9saXN0cywgb3V0ZGlyKQoKICAgIGlmIGFyZ3Muc2V0X2FyZzoKICAgICAgICBuYW1lLCB2YWx1ZSA9IHBhcnNlX3NldF9hcmd1bWVudChhcmdzLnNldF9hcmcpCiAgICAgICAgc2V0X3BhcmFtZXRlcihjb25uLCBlbGVtZW50cywgZ2RsX2xpc3RzLCBuYW1lLCB2YWx1ZSwgYXJncy5hcHBseSkKICAgIGVsc2U6CiAgICAgICAgcHJpbnQoJ+ODkuODs+ODiDogLS1zZXQg44OR44Op44Oh44O844K/5ZCNPeWApCDjgafkuIDmi6zlpInmm7Tjga7jg5fjg6zjg5Pjg6Xjg7zjgIHjgZXjgonjgasgLS1hcHBseSDjgafpgannlKjjgafjgY3jgb7jgZnjgIInKQoKICAgIHByaW50KCflrozkuobjgZfjgb7jgZfjgZ/jgIInKQoKCmlmIF9fbmFtZV9fID09ICdfX21haW5fXyc6CiAgICBwYXVzZSA9ICctLW5vLXBhdXNlJyBub3QgaW4gc3lzLmFyZ3YKICAgIHRyeToKICAgICAgICBtYWluKCkKICAgICAgICBleGl0X2NvZGUgPSAwCiAgICBleGNlcHQgU3lzdGVtRXhpdCBhcyBlOgogICAgICAgIGlmIGUuY29kZSBub3QgaW4gKDAsIE5vbmUpOgogICAgICAgICAgICBwcmludCgnXG7jgqjjg6njg7w6IHt9Jy5mb3JtYXQoZSkpCiAgICAgICAgZXhpdF9jb2RlID0gMCBpZiBlLmNvZGUgaW4gKDAsIE5vbmUpIGVsc2UgMQogICAgZXhjZXB0IEV4Y2VwdGlvbiBhcyBlOgogICAgICAgIHByaW50KCdcbuS6iOacn+OBl+OBquOBhOOCqOODqeODvOOBjOeZuueUn+OBl+OBvuOBl+OBnzoge30nLmZvcm1hdChlKSkKICAgICAgICBleGl0X2NvZGUgPSAxCiAgICBpZiBwYXVzZToKICAgICAgICB0cnk6CiAgICAgICAgICAgIGlucHV0KCdcbkVudGVy44Kt44O844KS5oq844GZ44Go57WC5LqG44GX44G+44GZLi4uJykKICAgICAgICBleGNlcHQgRU9GRXJyb3I6CiAgICAgICAgICAgIHBhc3MKICAgIHN5cy5leGl0KGV4aXRfY29kZSkK" download="GDLパラメータ操作.py">⬇ GDLパラメータ操作.py をダウンロード</a>
+    <a class="btn sub" href="https://raw.githubusercontent.com/ooki-atsufumi/tapir-archicad-automation/claude/bim-handoff-guide-html-3qf5br/gdl-handoff/GDL%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E6%93%8D%E4%BD%9C.py" download="GDLパラメータ操作.py" target="_blank" rel="noopener">GitHub から入手（予備）</a>
+  </p>
+  <h3>使い方</h3>
+  <ol>
+    <li>Archicad でプロジェクトを開き、調べたいオブジェクト（ドア・窓・ランプも可）を<b>選択</b>します。</li>
+    <li><code>GDLパラメータ操作.py</code> を<b>ダブルクリック</b>すると、選択要素の全GDLパラメータが <code>GDLパラメータ一覧_日時.csv</code> に出力されます（読み取りのみで安全です）。Excelでそのまま開けます（文字化け対策済み）。</li>
+  </ol>
+  <p>コマンドプロンプトからは一括変更もできます。<b>既定はドライラン（プレビューのみ）</b>で、<code>--apply</code> を付けたときだけ実際に変更されます。</p>
+  <pre><code>python GDLパラメータ操作.py                          … 選択要素のパラメータをCSVに一覧出力
+python GDLパラメータ操作.py --type Object            … 選択の代わりに全オブジェクトを対象化
+python GDLパラメータ操作.py --set gs_cont_pen=95     … 変更のプレビュー(まだ変更しない)
+python GDLパラメータ操作.py --set gs_cont_pen=95 --apply  … 実際に一括変更する</code></pre>
+  <ul>
+    <li>パラメータ名は CSV 一覧の「パラメータ名」列で確認できます（例: <code>gs_cont_pen</code> は輪郭ペン）。</li>
+    <li>文字列を設定する場合は <code>--set パラメータ名="値"</code> のように引用符で囲みます。</li>
+    <li><b><code>--apply</code> での変更後も、Archicad の［編集］→［元に戻す］で取り消せます。</b></li>
+    <li>ロック中のパラメータは自動的にスキップされます。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>トラブルシューティング</h2>
+  <div class="scroll"><table>
+    <tr><th>症状</th><th>原因と対処</th></tr>
+    <tr><td>3D画面にオブジェクトが表示されない</td><td>3Dスクリプトのエラーの可能性。GDLエディタのチェックボタン（✓）でエラー行を確認。<code>BLOCK 0,0,0</code> のように寸法が0になっていないかも確認。</td></tr>
+    <tr><td>平面図に何も表示されない</td><td>2Dスクリプトが空。まずは <code>PROJECT2 3, 270, 2</code>（3D形状の投影）を入れる。</td></tr>
+    <tr><td>マニュアルPDFがダウンロードできない</td><td>社内ネットワークの制限の可能性。Archicad の［ヘルプ］メニューから GDLリファレンスガイドを開く方法が確実（インストール時に同梱されています）。</td></tr>
+    <tr><td>「Archicad に接続できませんでした」（スクリプト実行時）</td><td>Archicad が起動していない／プロジェクトを開いていない。起動して開いてから再実行。複数起動時は <code>--port 19724</code> を試す。</td></tr>
+    <tr><td>「Tapir アドオンが見つかりませんでした」</td><td>ステップ3-2が未完了、またはバージョン違いのファイルを入れている。アドオンマネージャーで Tapir にチェックが入っているか確認。</td></tr>
+    <tr><td>「python は認識されていません」</td><td>Python の PATH 設定漏れ。「Add python.exe to PATH」にチェックを入れて再インストール。</td></tr>
+    <tr><td>--set しても値が変わらない要素がある</td><td>そのパラメータがロックされている（CSVの「ロック」列で確認）か、その要素にそのパラメータが存在しない。ドライラン表示のスキップ理由を確認。</td></tr>
+    <tr><td>一括変更を取り消したい</td><td>Archicad の［編集］→［元に戻す］（Ctrl+Z / Cmd+Z）で戻せます。大量変更の前にプロジェクトを保存しておくとより安心です。</td></tr>
+    <tr><td>Tapir を入れてから Archicad の調子が悪い気がする（困ったときの戻し方）</td><td><b>無効化すればいつでも元に戻せます。</b>［オプション］→［アドオンマネージャー...］で Tapir のチェックを外して「OK」→ Archicad を再起動（またはアドオンファイル自体を一時的に別フォルダへ移動してから起動）。Archicad 本体やプロジェクトデータには影響しません。なお、バージョン違いのファイル（例: AC28 に AC29 用）を入れた場合はクラッシュではなく単に読み込まれないだけです。</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>技術メモ（引き継ぎを受けて改造する方へ）</h2>
+  <p>付属スクリプトは Python 標準ライブラリのみで書かれており、Archicad の JSONインターフェース（<code>http://127.0.0.1:19723</code>）経由で次の Tapir コマンドを使っています。</p>
+  <ol>
+    <li><code>TapirCommand.GetSelectedElements</code>（または公式 <code>API.GetElementsByType</code>）— 対象要素の取得</li>
+    <li><code>TapirCommand.GetGDLParametersOfElements</code> — 要素ごとの全GDLパラメータ（名前・型・値・ロック状態・配列サイズ）を取得</li>
+    <li><code>TapirCommand.SetGDLParametersOfElements</code> — パラメータの一括変更。配列パラメータは「リストを渡してまるごと差し替え」または「<code>index1</code>/<code>index2</code>（1始まり）で1要素だけ変更」の2通りが可能</li>
+  </ol>
+  <h3>参考リンク</h3>
+  <ul>
+    <li><a href="https://gdl.graphisoft.com/" target="_blank" rel="noopener">GDL Center（Graphisoft公式・最新リファレンスとチュートリアル）</a></li>
+    <li><a href="https://enzyme-apd.github.io/tapir-archicad-automation/archicad-addon" target="_blank" rel="noopener">Tapir コマンドリファレンス</a></li>
+    <li><a href="https://github.com/ENZYME-APD/tapir-archicad-automation" target="_blank" rel="noopener">Tapir 公式リポジトリ（GitHub）</a></li>
+    <li><a href="https://www.python.org/downloads/" target="_blank" rel="noopener">Python 公式ダウンロード</a></li>
+  </ul>
+</section>
+
+<footer>
+  GDL 引き継ぎ書 — このHTMLは単体で完結しています（スクリプト本体を内蔵、マニュアルは公式直リンク）。そのままメール添付・共有フォルダ配布が可能です。
+</footer>
+
+</div>
+</body>
+</html>
