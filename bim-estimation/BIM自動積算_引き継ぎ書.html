@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIM自動積算 引き継ぎ書</title>
+<style>
+  :root {
+    --ink: #1c2733;
+    --sub: #5a6b7d;
+    --line: #d9e1e8;
+    --bg: #f4f7f9;
+    --card: #ffffff;
+    --accent: #0f6f5c;
+    --accent-ink: #ffffff;
+    --warn-bg: #fff7e6;
+    --warn-line: #e6c26e;
+    --code-bg: #eef2f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+    line-height: 1.75; font-size: 16px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.hero {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px 32px; margin-bottom: 28px;
+  }
+  .hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: .02em; }
+  .hero p.lead { margin: 0; color: var(--sub); }
+  .hero .meta { margin-top: 14px; font-size: 13px; color: var(--sub); display: flex; gap: 18px; flex-wrap: wrap; }
+  .hero .meta span::before { content: "● "; color: var(--accent); font-size: 9px; vertical-align: 2px; }
+  section {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 32px; margin-bottom: 22px;
+  }
+  h2 { font-size: 20px; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); }
+  h2 .step {
+    display: inline-block; background: var(--accent); color: var(--accent-ink);
+    border-radius: 8px; font-size: 13px; padding: 2px 10px; margin-right: 10px; vertical-align: 2px;
+  }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 4px 0; }
+  code {
+    background: var(--code-bg); border-radius: 5px; padding: 1px 7px;
+    font-family: Consolas, "Courier New", monospace; font-size: 14px;
+  }
+  pre {
+    background: #22303c; color: #e8eef3; border-radius: 10px; padding: 14px 18px;
+    overflow-x: auto; font-size: 14px; line-height: 1.6;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14.5px; }
+  .scroll { overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #eef4f2; white-space: nowrap; }
+  a { color: #0b5cad; }
+  .btn {
+    display: inline-block; background: var(--accent); color: var(--accent-ink) !important;
+    text-decoration: none; font-weight: 700; border-radius: 10px; padding: 12px 22px;
+    margin: 6px 8px 6px 0; box-shadow: 0 2px 4px rgba(0,0,0,.12);
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.sub { background: #40566b; }
+  .note {
+    background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px;
+    padding: 12px 16px; margin: 12px 0; font-size: 14.5px;
+  }
+  .note b:first-child { color: #8a6100; }
+  .flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 18px 0; }
+  .flow .box {
+    flex: 1 1 150px; min-width: 150px; border: 2px solid var(--accent); border-radius: 12px;
+    padding: 12px 14px; text-align: center; background: #f2faf7;
+  }
+  .flow .box b { display: block; margin-bottom: 4px; }
+  .flow .box small { color: var(--sub); }
+  .flow .arrow {
+    flex: 0 0 auto; align-self: center; padding: 0 10px;
+    color: var(--accent); font-size: 22px; font-weight: 700;
+  }
+  .check { list-style: none; padding-left: 4px; }
+  .check li::before { content: "☑ "; color: var(--accent); font-weight: 700; }
+  footer { color: var(--sub); font-size: 13px; text-align: center; margin-top: 30px; }
+  @media print {
+    body { background: #fff; }
+    section, header.hero { border: none; padding: 10px 0; }
+    .btn { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>BIM自動積算 引き継ぎ書</h1>
+  <p class="lead">Archicad のモデルから数量（長さ・面積・体積など）を自動集計し、CSVを出力するスクリプト「BIM自動積算.py」のセットアップ・運用手順書です。</p>
+  <div class="meta">
+    <span>対象: Archicad 25〜29 をお使いの方（プログラミング知識は不要）</span>
+    <span>所要時間: 約15分</span>
+    <span>作成日: 2026-08-16</span>
+  </div>
+</header>
+
+<section>
+  <h2>全体像 — 仕組みを1分で理解する</h2>
+  <p>Archicad は起動中、パソコン内部でJSON命令を受け付ける窓口（ポート 19723）を自動的に開いています。無料アドオン「<b>Tapir</b>」を入れるとこの窓口で使える命令が大幅に増え、「BIM自動積算.py」はその窓口に命令を送って数量を取り出し、CSVにまとめます。</p>
+  <div class="flow">
+    <div class="box"><b>Archicad</b><small>＋ Tapir アドオン<br>（プロジェクトを開いておく）</small></div>
+    <div class="arrow">⇄</div>
+    <div class="box"><b>BIM自動積算.py</b><small>Python で実行<br>（同じPC内で通信）</small></div>
+    <div class="arrow">→</div>
+    <div class="box"><b>CSV × 2</b><small>明細CSV ＋ 集計CSV<br>（Excelで開ける）</small></div>
+  </div>
+  <p>準備するものは次の3つだけです。すべて無料で、このページからダウンロードできます。</p>
+  <div class="scroll"><table>
+    <tr><th>準備するもの</th><th>役割</th><th>入手先</th></tr>
+    <tr><td>① Python 3</td><td>スクリプトを動かす実行環境</td><td>ステップ1参照（python.org）</td></tr>
+    <tr><td>② Tapir アドオン</td><td>Archicad に自動化命令を追加</td><td>ステップ2参照（GitHub公式リリース）</td></tr>
+    <tr><td>③ BIM自動積算.py</td><td>積算スクリプト本体</td><td>ステップ3の緑のボタン</td></tr>
+  </table></div>
+  <p class="note"><b>ポイント:</b> 追加のPythonパッケージ（pip install）は<b>一切不要</b>です。Python本体さえ入れれば動きます。すべて自分のPC内で完結し、モデルデータが外部に送信されることはありません。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 1</span>Python をインストールする</h2>
+  <ol>
+    <li>公式サイト <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">https://www.python.org/downloads/</a> を開き、「Download Python 3.x.x」の黄色いボタンをクリックしてインストーラーをダウンロードします。</li>
+    <li>インストーラーを起動したら、<b>最初の画面で必ず「Add python.exe to PATH」にチェック</b>を入れてから「Install Now」をクリックします（ここが一番のつまずきポイントです）。</li>
+    <li>Mac の場合はダウンロードした .pkg をそのままインストールすればOKです。</li>
+  </ol>
+  <h3>インストール確認</h3>
+  <p>Windows はスタートメニューで「cmd」と入力してコマンドプロンプトを開き、次を入力して Enter：</p>
+  <pre><code>python --version</code></pre>
+  <p><code>Python 3.12.x</code> のようにバージョンが表示されれば成功です。（Mac はターミナルで <code>python3 --version</code>）</p>
+  <p class="note"><b>表示されない場合:</b> 「Add python.exe to PATH」のチェックを忘れた可能性が高いです。インストーラーをもう一度実行し「Uninstall」→ 再インストール（チェックを入れて）が確実です。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 2</span>Tapir アドオンをインストールする</h2>
+  <p>Tapir は Archicad に自動化用のJSONコマンドを追加する無料のオープンソースアドオンです（開発: ENZYME-APD）。<b>お使いの Archicad のバージョンと OS に合ったファイルを1つ</b>ダウンロードしてください。</p>
+  <div class="scroll"><table>
+    <tr><th>Archicad バージョン</th><th>Windows</th><th>Mac</th></tr>
+    <tr><td>Archicad 29</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC29_Win.apx">TapirAddOn_AC29_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC29_Mac.zip">TapirAddOn_AC29_Mac.zip</a></td></tr>
+    <tr><td>Archicad 28</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC28_Win.apx">TapirAddOn_AC28_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC28_Mac.zip">TapirAddOn_AC28_Mac.zip</a></td></tr>
+    <tr><td>Archicad 27</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC27_Win.apx">TapirAddOn_AC27_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC27_Mac.zip">TapirAddOn_AC27_Mac.zip</a></td></tr>
+    <tr><td>Archicad 26</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC26_Win.apx">TapirAddOn_AC26_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC26_Mac.zip">TapirAddOn_AC26_Mac.zip</a></td></tr>
+    <tr><td>Archicad 25</td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC25_Win.apx">TapirAddOn_AC25_Win.apx</a></td>
+      <td><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest/download/TapirAddOn_AC25_Mac.zip">TapirAddOn_AC25_Mac.zip</a></td></tr>
+  </table></div>
+  <p>一覧ページ: <a href="https://github.com/ENZYME-APD/tapir-archicad-automation/releases/latest" target="_blank" rel="noopener">Tapir 最新リリース（GitHub）</a></p>
+  <h3>Archicad への組み込み手順</h3>
+  <ol>
+    <li>Mac の場合は zip をダブルクリックで解凍しておきます（.bundle ができます）。Windows は .apx のままでOK。</li>
+    <li>Archicad を起動し、メニューの <b>［オプション］→［アドオンマネージャー...］</b> を開きます。</li>
+    <li><b>［有効なアドオンのリストを編集］</b>（Edit List of Available Add-Ons）タブで<b>［追加...］</b>をクリックし、ダウンロードしたファイルを選択して「OK」。</li>
+    <li>Archicad のメニューバーに <b>「Tapir」メニュー（または Interoperability 内の Tapir 項目）が表示されれば成功</b>です。</li>
+  </ol>
+  <p class="note"><b>注意:</b> Archicad のバージョンとファイルのバージョン（AC29 など）が一致していないと読み込めません。またダウンロードしたファイルは、消さない場所（例: <code>ドキュメント\Archicad\Addons</code> など）に置いてから追加してください。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 3</span>BIM自動積算.py をダウンロードする</h2>
+  <p>下の緑のボタンを押すと、スクリプト本体がそのままダウンロードされます（このHTMLファイル内に埋め込んであるため、ネット接続がなくてもダウンロードできます）。</p>
+  <p>
+    <a class="btn" href="data:text/x-python;charset=utf-8;base64,IyAtKi0gY29kaW5nOiB1dGYtOCAtKi0KIiIiCkJJTeiHquWLleepjeeuly5weSDigJQgQXJjaGljYWQgKyBUYXBpciDjgqLjg4njgqrjg7PjgavjgojjgovmlbDph4/oh6rli5Xpm4boqIjjgrnjgq/jg6rjg5fjg4gKCkFyY2hpY2FkIOOBp+mWi+OBhOOBpuOBhOOCi+ODl+ODreOCuOOCp+OCr+ODiOOBruWFqOimgee0oCjjgb7jgZ/jga/pgbjmip7kuK3jga7opoHntKAp44GL44KJCuaVsOmHjyjpq5jjgZXjg7vluYXjg7vljprjgb/jg7vplbfjgZXjg7vpnaLnqY3jg7vkvZPnqY3jgarjgakp44KS5Y+W44KK5Ye644GX44CBCuOAjOaYjue0sENTVuOAjeOBqOOAjOmbhuioiENTVuOAjeOBrjLjg5XjgqHjgqTjg6vjgpLlh7rlipvjgZfjgb7jgZnjgIIK5Y2Y5L6h6KGoKFVOSVRfUFJJQ0VTKeOCkuioreWumuOBmeOCjOOBsOamgueul+mHkemhjeOCguiHquWLleioiOeul+OBl+OBvuOBmeOAggoK5b+F6KaB44Gq44KC44GuOgogIC0gQXJjaGljYWQgMjUg5Lul6ZmNICjjg5fjg63jgrjjgqfjgq/jg4jjgpLplovjgYTjgZ/nirbmhYvjgafotbfli5XjgZfjgabjgYrjgY8pCiAgLSBUYXBpciDjgqLjg4njgqrjg7MgKGh0dHBzOi8vZ2l0aHViLmNvbS9FTlpZTUUtQVBEL3RhcGlyLWFyY2hpY2FkLWF1dG9tYXRpb24vcmVsZWFzZXMvbGF0ZXN0KQogIC0gUHl0aG9uIDMuOCDku6XpmY0gKOi/veWKoOODkeODg+OCseODvOOCuOOBruOCpOODs+OCueODiOODvOODq+OBr+S4jeimgeOAguaomea6luODqeOCpOODluODqeODquOBruOBv+OBp+WLleS9nCkKCuS9v+OBhOaWuToKICBweXRob24gQklN6Ieq5YuV56mN566XLnB5ICAgICAgICAgICAgICAgICAuLi4g44OX44Ot44K444Kn44Kv44OI5YaF44Gu5YWo6KaB57Sg44KS6ZuG6KiICiAgcHl0aG9uIEJJTeiHquWLleepjeeuly5weSAtLXNlbGVjdGVkICAgICAgLi4uIEFyY2hpY2FkIOOBp+mBuOaKnuS4reOBruimgee0oOOBoOOBkeOCkumbhuioiAogIHB5dGhvbiBCSU3oh6rli5XnqY3nrpcucHkgLS1vdXRkaXIgQzpcXG91dCAuLi4gQ1NWIOOBruWHuuWKm+WFiOODleOCqeODq+ODgOOCkuaMh+WumgogIHB5dGhvbiBCSU3oh6rli5XnqY3nrpcucHkgLS1wb3J0IDE5NzI0ICAgIC4uLiBBcmNoaWNhZCDjgpLopIfmlbDotbfli5XjgZfjgabjgYTjgovloLTlkIjjga7jg53jg7zjg4jmjIflrpoKCuWHuuWKmyAo44K544Kv44Oq44OX44OI44Go5ZCM44GY44OV44Kp44Or44OA44CB44G+44Gf44GvIC0tb3V0ZGlyKToKICBCSU3nqY3nrpdf5piO57SwX1lZWVlNTURELUhITU1TUy5jc3YgLi4uIDHopoHntKA9MeihjOOBruaYjue0sAogIEJJTeepjeeul1/pm4boqIhfWVlZWU1NREQtSEhNTVNTLmNzdiAuLi4g6KaB57Sg56iu5Yilw5fpmo7jgZTjgajjga7lkIjoqIjjgajnqK7liKXlkIjoqIgKCuOBk+OBruOCueOCr+ODquODl+ODiOOBryBBcmNoaWNhZCDjga4gSlNPTiDjgqTjg7Pjgr/jg7zjg5Xjgqfjg7zjgrkgKGh0dHA6Ly8xMjcuMC4wLjE6MTk3MjMpIOOBqApUYXBpciDjgqLjg4njgqrjg7Pjga7ov73liqDjgrPjg57jg7Pjg4kgKFRhcGlyQ29tbWFuZCkg44KS5L2/55So44GX44G+44GZ44CCCuOCs+ODnuODs+ODieS4gOimpzogaHR0cHM6Ly9lbnp5bWUtYXBkLmdpdGh1Yi5pby90YXBpci1hcmNoaWNhZC1hdXRvbWF0aW9uL2FyY2hpY2FkLWFkZG9uCiIiIgoKaW1wb3J0IGFyZ3BhcnNlCmltcG9ydCBjc3YKaW1wb3J0IGRhdGV0aW1lCmltcG9ydCBqc29uCmltcG9ydCBvcwppbXBvcnQgcmUKaW1wb3J0IHN5cwppbXBvcnQgdXJsbGliLmVycm9yCmltcG9ydCB1cmxsaWIucmVxdWVzdAoKIyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KIyDilrwg5Y2Y5L6h6KGoICjjgqvjgrnjgr/jg57jgqTjgrrnrofmiYApCiMgICAg44Kt44O8ICAgOiDopoHntKDnqK7liKXjga7ml6XmnKzoqp7lkI0gKOaYjue0sENTVuOBruOAjOeoruWIpeOAjeWIl+OBqOWQjOOBmOaWh+Wtl+WIlykKIyAgICDlgKQgICAgIDogKOWfuua6liwg5Y2Y5L6hW+WGhl0pCiMgICAg5Z+65rqWICAgOiAn5L2T56mNJyAo5YaGL20zKSAvICfpnaLnqY0nICjlhoYvbTIpIC8gJ+mVt+OBlScgKOWGhi9tKSAvICflgIsnICjlhoYv5YCLKQojICAgIOioreWumuOBl+OBn+eoruWIpeOBoOOBkemHkemhjeOBjOioiOeul+OBleOCjOOBvuOBmeOAguS+i+OCkuWkluOBl+OBpuS9v+OBo+OBpuOBj+OBoOOBleOBhOOAggojID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQpVTklUX1BSSUNFUyA9IHsKICAgICMgJ+WjgSc6ICAgICAoJ+S9k+epjScsIDQ1MDAwKSwKICAgICMgJ+OCueODqeODlic6ICgn5L2T56mNJywgMzgwMDApLAogICAgIyAn5p+xJzogICAgICgn5L2T56mNJywgNTIwMDApLAogICAgIyAn5qKBJzogICAgICgn5L2T56mNJywgNTAwMDApLAogICAgIyAn44OJ44KiJzogICAoJ+WAiycsICAgODAwMDApLAogICAgIyAn56qTJzogICAgICgn5YCLJywgICA2MDAwMCksCn0KCiMg6KaB57Sg56iu5Yil44Gu6Iux6Kqe5ZCNIOKGkiDml6XmnKzoqp7lkI0gKOacquWumue+qeOBrueoruWIpeOBr+iLseiqnuWQjeOBruOBvuOBvuihqOekuuOBleOCjOOBvuOBmSkKVFlQRV9OQU1FU19KQSA9IHsKICAgICdXYWxsJzogJ+WjgScsCiAgICAnQ29sdW1uJzogJ+afsScsCiAgICAnQmVhbSc6ICfmooEnLAogICAgJ1NsYWInOiAn44K544Op44OWJywKICAgICdSb29mJzogJ+Wxi+aguScsCiAgICAnU2hlbGwnOiAn44K344Kn44OrJywKICAgICdNZXNoJzogJ+ODoeODg+OCt+ODpSjnm5vlnJ8pJywKICAgICdab25lJzogJ+OCvuODvOODsycsCiAgICAnQ3VydGFpbldhbGwnOiAn44Kr44O844OG44Oz44Km44Kp44O844OrJywKICAgICdDdXJ0YWluV2FsbFNlZ21lbnQnOiAnQ1fjgrvjgrDjg6Hjg7Pjg4gnLAogICAgJ0N1cnRhaW5XYWxsRnJhbWUnOiAnQ1fjg5Xjg6zjg7zjg6AnLAogICAgJ0N1cnRhaW5XYWxsUGFuZWwnOiAnQ1fjg5Hjg43jg6snLAogICAgJ0N1cnRhaW5XYWxsSnVuY3Rpb24nOiAnQ1fjgrjjg6Pjg7Pjgq/jgrfjg6fjg7MnLAogICAgJ0N1cnRhaW5XYWxsQWNjZXNzb3J5JzogJ0NX44Ki44Kv44K744K144OqJywKICAgICdTdGFpcic6ICfpmo7mrrUnLAogICAgJ1Jpc2VyJzogJ+i5tOS4iicsCiAgICAnVHJlYWQnOiAn6LiP6Z2iJywKICAgICdTdGFpclN0cnVjdHVyZSc6ICfpmo7mrrXmp4vpgKAnLAogICAgJ1JhaWxpbmcnOiAn5omL44GZ44KKJywKICAgICdEb29yJzogJ+ODieOCoicsCiAgICAnV2luZG93JzogJ+eqkycsCiAgICAnU2t5bGlnaHQnOiAn5aSp56qTJywKICAgICdPcGVuaW5nJzogJ+mWi+WPoycsCiAgICAnT2JqZWN0JzogJ+OCquODluOCuOOCp+OCr+ODiCcsCiAgICAnTGFtcCc6ICfjg6njg7Pjg5cnLAogICAgJ01vcnBoJzogJ+ODouODq+ODlScsCiAgICAnSG90bGluayc6ICfjg5vjg4Pjg4jjg6rjg7Pjgq8nLAp9CgojIOaVsOmHj+WIl+OBqOOAgeOBneOBruWApOOCkuWPluOCiuWHuuOBmee1hOOBv+i+vOOBv+ODl+ODreODkeODhuOCo+WQjeOBruWAmeijnCAo5a2Y5Zyo44GZ44KL44KC44Gu44Gg44GR5L2/55SoKQpDT0xVTU5fQ0FORElEQVRFUyA9IFsKICAgICgnRWxlbWVudElEJywgWydHZW5lcmFsX0VsZW1lbnRJRCddLCBOb25lKSwKICAgICgn6auY44GVKG0pJywgICBbJ0dlbmVyYWxfSGVpZ2h0J10sICAgIE5vbmUpLAogICAgKCfluYUobSknLCAgICAgWydHZW5lcmFsX1dpZHRoJ10sICAgICBOb25lKSwKICAgICgn5Y6a44G/KG0pJywgICBbJ0dlbmVyYWxfVGhpY2tuZXNzJ10sIE5vbmUpLAogICAgKCfplbfjgZUobSknLCAgIFsnR2VuZXJhbF9MZW5ndGgnLCAnR2VuZXJhbF8xRExlbmd0aCddLAogICAgICAgICAgICAgICAgICByJ15HZW5lcmFsXy4qTGVuZ3RoJCcpLAogICAgKCfpnaLnqY0obTIpJywgIFsnR2VuZXJhbF9BcmVhJywgJ0dlbmVyYWxfTmV0QXJlYScsICdHZW5lcmFsX1JlZmVyZW5jZUFyZWEnXSwKICAgICAgICAgICAgICAgICAgcideR2VuZXJhbF8uKig/PCFTdXJmYWNlKUFyZWEkJyksCiAgICAoJ+S9k+epjShtMyknLCAgWydHZW5lcmFsX1ZvbHVtZScsICdHZW5lcmFsX05ldFZvbHVtZScsICdHZW5lcmFsX0dyb3NzVm9sdW1lJ10sCiAgICAgICAgICAgICAgICAgIHInXkdlbmVyYWxfLipWb2x1bWUkJyksCl0KClFUWV9CQVNJU19DT0xVTU4gPSB7J+mVt+OBlSc6ICfplbfjgZUobSknLCAn6Z2i56mNJzogJ+mdouepjShtMiknLCAn5L2T56mNJzogJ+S9k+epjShtMyknfQoKQ0hVTktfU0laRSA9IDMwMCAgIyAx5Zue44Gu44Kz44Oe44Oz44OJ5ZG844Gz5Ye644GX44Gn5Yem55CG44GZ44KL6KaB57Sg5pWwCgoKIyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KIyBBcmNoaWNhZCBKU09OIOOCpOODs+OCv+ODvOODleOCp+ODvOOCueOBqOOBrumAmuS/oQojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKY2xhc3MgQXJjaGljYWRDb25uZWN0aW9uOgogICAgZGVmIF9faW5pdF9fKHNlbGYsIGhvc3QsIHBvcnQpOgogICAgICAgIHNlbGYudXJsID0gJ3t9Ont9Jy5mb3JtYXQoaG9zdCwgcG9ydCkKCiAgICBkZWYgcnVuKHNlbGYsIGNvbW1hbmQsIHBhcmFtZXRlcnM9Tm9uZSk6CiAgICAgICAgIiIiQXJjaGljYWQg5YWs5byPIEpTT04g44Kz44Oe44Oz44OJ44KS5a6f6KGM44GZ44KL44CCIiIiCiAgICAgICAgcmVxdWVzdCA9IHVybGxpYi5yZXF1ZXN0LlJlcXVlc3Qoc2VsZi51cmwpCiAgICAgICAgcmVxdWVzdC5hZGRfaGVhZGVyKCdDb250ZW50LVR5cGUnLCAnYXBwbGljYXRpb24vanNvbicpCiAgICAgICAgYm9keSA9IGpzb24uZHVtcHMoeydjb21tYW5kJzogY29tbWFuZCwgJ3BhcmFtZXRlcnMnOiBwYXJhbWV0ZXJzIG9yIHt9fSkuZW5jb2RlKCd1dGY4JykKICAgICAgICByZXNwb25zZSA9IGpzb24ubG9hZHModXJsbGliLnJlcXVlc3QudXJsb3BlbihyZXF1ZXN0LCBib2R5KS5yZWFkKCkpCiAgICAgICAgaWYgbm90IHJlc3BvbnNlLmdldCgnc3VjY2VlZGVkJyk6CiAgICAgICAgICAgIGVycm9yID0gcmVzcG9uc2UuZ2V0KCdlcnJvcicsIHt9KQogICAgICAgICAgICByYWlzZSBSdW50aW1lRXJyb3IoJ+OCs+ODnuODs+ODiSB7fSDjgYzlpLHmlZfjgZfjgb7jgZfjgZ86IHt9Jy5mb3JtYXQoCiAgICAgICAgICAgICAgICBjb21tYW5kLCBlcnJvci5nZXQoJ21lc3NhZ2UnLCBqc29uLmR1bXBzKGVycm9yLCBlbnN1cmVfYXNjaWk9RmFsc2UpKSkpCiAgICAgICAgcmV0dXJuIHJlc3BvbnNlLmdldCgncmVzdWx0Jywge30pCgogICAgZGVmIHJ1bl90YXBpcihzZWxmLCBjb21tYW5kLCBwYXJhbWV0ZXJzPU5vbmUpOgogICAgICAgICIiIlRhcGlyIOOCouODieOCquODs+OBrui/veWKoOOCs+ODnuODs+ODieOCkuWun+ihjOOBmeOCi+OAgiIiIgogICAgICAgIHJlc3VsdCA9IHNlbGYucnVuKCdBUEkuRXhlY3V0ZUFkZE9uQ29tbWFuZCcsIHsKICAgICAgICAgICAgJ2FkZE9uQ29tbWFuZElkJzogewogICAgICAgICAgICAgICAgJ2NvbW1hbmROYW1lc3BhY2UnOiAnVGFwaXJDb21tYW5kJywKICAgICAgICAgICAgICAgICdjb21tYW5kTmFtZSc6IGNvbW1hbmQsCiAgICAgICAgICAgIH0sCiAgICAgICAgICAgICdhZGRPbkNvbW1hbmRQYXJhbWV0ZXJzJzogcGFyYW1ldGVycyBvciB7fSwKICAgICAgICB9KQogICAgICAgIHJldHVybiByZXN1bHQuZ2V0KCdhZGRPbkNvbW1hbmRSZXNwb25zZScsIHt9KQoKCmRlZiBjb25uZWN0KGhvc3QsIHBvcnQpOgogICAgY29ubiA9IEFyY2hpY2FkQ29ubmVjdGlvbihob3N0LCBwb3J0KQogICAgdHJ5OgogICAgICAgIGluZm8gPSBjb25uLnJ1bignQVBJLkdldFByb2R1Y3RJbmZvJykKICAgIGV4Y2VwdCB1cmxsaWIuZXJyb3IuVVJMRXJyb3IgYXMgZToKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KAogICAgICAgICAgICAnQXJjaGljYWQg44Gr5o6l57aa44Gn44GN44G+44Gb44KT44Gn44GX44GfICh7fTp7fSnjgIJcbicKICAgICAgICAgICAgJyAgLSBBcmNoaWNhZCDjgYzotbfli5XjgZfjgabjgYTjgabjg5fjg63jgrjjgqfjgq/jg4jjgYzplovjgYTjgabjgYTjgovjgYvnorroqo3jgZfjgabjgY/jgaDjgZXjgYTjgIJcbicKICAgICAgICAgICAgJyAgLSBBcmNoaWNhZCDjgpLopIfmlbDotbfli5XjgZfjgabjgYTjgovloLTlkIjjga8gLS1wb3J0IDE5NzI0IOOBruOCiOOBhuOBq+aMh+WumuOBl+OBpuOBj+OBoOOBleOBhFxuJwogICAgICAgICAgICAnICAgICjjg53jg7zjg4jjga8gMTk3MjMg44GL44KJ6aCG44Gr5L2/44KP44KM44G+44GZKeOAglxuJwogICAgICAgICAgICAnICDoqbPntLA6IHt9Jy5mb3JtYXQoaG9zdCwgcG9ydCwgZSkpCiAgICBwcmludCgnQXJjaGljYWQge30gKGJ1aWxkIHt9KSDjgavmjqXntprjgZfjgb7jgZfjgZ/jgIInLmZvcm1hdCgKICAgICAgICBpbmZvLmdldCgndmVyc2lvbicsICc/JyksIGluZm8uZ2V0KCdidWlsZE51bWJlcicsICc/JykpKQoKICAgIHRyeToKICAgICAgICB0YXBpciA9IGNvbm4ucnVuX3RhcGlyKCdHZXRBZGRPblZlcnNpb24nKQogICAgICAgIHByaW50KCdUYXBpciDjgqLjg4njgqrjg7Mgdnt9IOOCkueiuuiqjeOBl+OBvuOBl+OBn+OAgicuZm9ybWF0KHRhcGlyLmdldCgndmVyc2lvbicsICc/JykpKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KAogICAgICAgICAgICAnVGFwaXIg44Ki44OJ44Kq44Oz44GM6KaL44Gk44GL44KK44G+44Gb44KT44Gn44GX44Gf44CCXG4nCiAgICAgICAgICAgICcgIGh0dHBzOi8vZ2l0aHViLmNvbS9FTlpZTUUtQVBEL3RhcGlyLWFyY2hpY2FkLWF1dG9tYXRpb24vcmVsZWFzZXMvbGF0ZXN0IOOBi+OCiVxuJwogICAgICAgICAgICAnICDjgYrkvb/jgYTjga4gQXJjaGljYWQg44OQ44O844K444On44Oz44Gr5ZCI44Gj44Gf44OV44Kh44Kk44Or44KS44OA44Km44Oz44Ot44O844OJ44GX44CBXG4nCiAgICAgICAgICAgICcgIFvjgqrjg5fjgrfjg6fjg7MgPiDjgqLjg4njgqrjg7Pjg57jg43jg7zjgrjjg6Pjg7xdIOOBi+OCieOCpOODs+OCueODiOODvOODq+OBl+OBpuOBj+OBoOOBleOBhOOAgicpCiAgICByZXR1cm4gY29ubgoKCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCiMg44OH44O844K/5Y+W5b6XCiMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCgpkZWYgZ2V0X2VsZW1lbnRzKGNvbm4sIHNlbGVjdGVkX29ubHkpOgogICAgY29tbWFuZCA9ICdHZXRTZWxlY3RlZEVsZW1lbnRzJyBpZiBzZWxlY3RlZF9vbmx5IGVsc2UgJ0dldEFsbEVsZW1lbnRzJwogICAgZWxlbWVudHMgPSBjb25uLnJ1bl90YXBpcihjb21tYW5kKS5nZXQoJ2VsZW1lbnRzJywgW10pCiAgICBpZiBub3QgZWxlbWVudHM6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgn5a++6LGh6KaB57Sg44GMMOS7tuOBp+OBl+OBn+OAgicgKwogICAgICAgICAgICAgICAgICAgICAgICAgKCcg6KaB57Sg44KS6YG45oqe44GX44Gm44GL44KJ5a6f6KGM44GX44Gm44GP44Gg44GV44GE44CCJyBpZiBzZWxlY3RlZF9vbmx5IGVsc2UgJycpKQogICAgcHJpbnQoJ+Wvvuixoeimgee0oDoge30g5Lu2ICh7fSknLmZvcm1hdChsZW4oZWxlbWVudHMpLCAn6YG45oqe6KaB57Sg44Gu44G/JyBpZiBzZWxlY3RlZF9vbmx5IGVsc2UgJ+WFqOimgee0oCcpKQogICAgcmV0dXJuIGVsZW1lbnRzCgoKZGVmIGdldF9kZXRhaWxzKGNvbm4sIGVsZW1lbnRzKToKICAgIGRldGFpbHMgPSBbXQogICAgZm9yIHN0YXJ0IGluIHJhbmdlKDAsIGxlbihlbGVtZW50cyksIENIVU5LX1NJWkUpOgogICAgICAgIGNodW5rID0gZWxlbWVudHNbc3RhcnQ6c3RhcnQgKyBDSFVOS19TSVpFXQogICAgICAgIHJlc3BvbnNlID0gY29ubi5ydW5fdGFwaXIoJ0dldERldGFpbHNPZkVsZW1lbnRzJywgeydlbGVtZW50cyc6IGNodW5rfSkKICAgICAgICBkZXRhaWxzLmV4dGVuZChyZXNwb25zZS5nZXQoJ2RldGFpbHNPZkVsZW1lbnRzJywgW10pKQogICAgcmV0dXJuIGRldGFpbHMKCgpkZWYgZ2V0X3N0b3J5X25hbWVzKGNvbm4pOgogICAgIiIi6ZqO44Kk44Oz44OH44OD44Kv44K5IOKGkiDpmo7lkI0g44Gu6L6e5pu444KS6L+U44GZ44CCIiIiCiAgICBuYW1lcyA9IHt9CiAgICB0cnk6CiAgICAgICAgZm9yIHN0b3J5IGluIGNvbm4ucnVuX3RhcGlyKCdHZXRTdG9yaWVzJykuZ2V0KCdzdG9yaWVzJywgW10pOgogICAgICAgICAgICBpbmRleCA9IHN0b3J5LmdldCgnaW5kZXgnKQogICAgICAgICAgICBuYW1lID0gc3RvcnkuZ2V0KCduYW1lJykgb3IgJycKICAgICAgICAgICAgbmFtZXNbaW5kZXhdID0gbmFtZSBpZiBuYW1lIGVsc2UgJ3t9RicuZm9ybWF0KGluZGV4KQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICBwYXNzCiAgICByZXR1cm4gbmFtZXMKCgpkZWYgcmVzb2x2ZV9xdWFudGl0eV9wcm9wZXJ0aWVzKGNvbm4pOgogICAgIiIi5a2Y5Zyo44GZ44KL57WE44G/6L6844G/44OX44Ot44OR44OG44Kj44GL44KJ5pWw6YeP5YiX44KS5rG65a6a44GX44CBWyjliJflkI0sIHByb3BlcnR5SWQpLCAuLi5dIOOCkui/lOOBmeOAgiIiIgogICAgYXZhaWxhYmxlID0gc2V0KCkKICAgIGZvciBwcm9wIGluIGNvbm4ucnVuKCdBUEkuR2V0QWxsUHJvcGVydHlOYW1lcycpLmdldCgncHJvcGVydGllcycsIFtdKToKICAgICAgICBpZiBwcm9wLmdldCgndHlwZScpID09ICdCdWlsdEluJzoKICAgICAgICAgICAgYXZhaWxhYmxlLmFkZChwcm9wLmdldCgnbm9uTG9jYWxpemVkTmFtZScpKQoKICAgIGNob3NlbiA9IFtdICAjICjliJflkI0sIG5vbkxvY2FsaXplZE5hbWUpCiAgICBmb3IgY29sdW1uLCBjYW5kaWRhdGVzLCBmYWxsYmFja19wYXR0ZXJuIGluIENPTFVNTl9DQU5ESURBVEVTOgogICAgICAgIG5hbWUgPSBuZXh0KChjIGZvciBjIGluIGNhbmRpZGF0ZXMgaWYgYyBpbiBhdmFpbGFibGUpLCBOb25lKQogICAgICAgIGlmIG5hbWUgaXMgTm9uZSBhbmQgZmFsbGJhY2tfcGF0dGVybjoKICAgICAgICAgICAgcmVnZXggPSByZS5jb21waWxlKGZhbGxiYWNrX3BhdHRlcm4pCiAgICAgICAgICAgIG5hbWUgPSBuZXh0KChhIGZvciBhIGluIHNvcnRlZChhdmFpbGFibGUpIGlmIHJlZ2V4Lm1hdGNoKGEpKSwgTm9uZSkKICAgICAgICBpZiBuYW1lOgogICAgICAgICAgICBjaG9zZW4uYXBwZW5kKChjb2x1bW4sIG5hbWUpKQogICAgICAgIGVsc2U6CiAgICAgICAgICAgIHByaW50KCfms6jmhI86IOWIl+OAjHt944CN44Gr5a++5b+c44GZ44KL57WE44G/6L6844G/44OX44Ot44OR44OG44Kj44GM6KaL44Gk44GL44KJ44Gq44GE44Gf44KB44K544Kt44OD44OX44GX44G+44GZ44CCJy5mb3JtYXQoY29sdW1uKSkKCiAgICBpZiBub3QgY2hvc2VuOgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoJ+aVsOmHj+eUqOOBrue1hOOBv+i+vOOBv+ODl+ODreODkeODhuOCo+OBjDHjgaTjgoLopovjgaTjgYvjgorjgb7jgZvjgpPjgafjgZfjgZ/jgIInKQoKICAgIHJlc3BvbnNlID0gY29ubi5ydW4oJ0FQSS5HZXRQcm9wZXJ0eUlkcycsIHsKICAgICAgICAncHJvcGVydGllcyc6IFt7J3R5cGUnOiAnQnVpbHRJbicsICdub25Mb2NhbGl6ZWROYW1lJzogbn0gZm9yIF8sIG4gaW4gY2hvc2VuXX0pCiAgICBjb2x1bW5zID0gW10KICAgIGZvciAoY29sdW1uLCBuYW1lKSwgZW50cnkgaW4gemlwKGNob3NlbiwgcmVzcG9uc2UuZ2V0KCdwcm9wZXJ0aWVzJywgW10pKToKICAgICAgICBpZiAncHJvcGVydHlJZCcgaW4gZW50cnk6CiAgICAgICAgICAgIGNvbHVtbnMuYXBwZW5kKChjb2x1bW4sIHsncHJvcGVydHlJZCc6IGVudHJ5Wydwcm9wZXJ0eUlkJ119KSkKICAgICAgICBlbHNlOgogICAgICAgICAgICBwcmludCgn5rOo5oSPOiDjg5fjg63jg5Hjg4bjgqMge30g44GuSUTjgpLlj5blvpfjgafjgY3jgarjgYvjgaPjgZ/jgZ/jgoHliJfjgIx7feOAjeOCkuOCueOCreODg+ODl+OBl+OBvuOBmeOAgicuZm9ybWF0KG5hbWUsIGNvbHVtbikpCiAgICByZXR1cm4gY29sdW1ucwoKCmRlZiBnZXRfcHJvcGVydHlfdmFsdWVzKGNvbm4sIGVsZW1lbnRzLCBjb2x1bW5zKToKICAgICIiIuimgee0oOOBlOOBqOOBruODl+ODreODkeODhuOCo+WApOOCkiBbe+WIl+WQjTog5YCkfV0g44Gn6L+U44GZ44CCIiIiCiAgICBwcm9wZXJ0eV9pZHMgPSBbcGlkIGZvciBfLCBwaWQgaW4gY29sdW1uc10KICAgIHZhbHVlc19wZXJfZWxlbWVudCA9IFtdCiAgICBmb3Igc3RhcnQgaW4gcmFuZ2UoMCwgbGVuKGVsZW1lbnRzKSwgQ0hVTktfU0laRSk6CiAgICAgICAgY2h1bmsgPSBlbGVtZW50c1tzdGFydDpzdGFydCArIENIVU5LX1NJWkVdCiAgICAgICAgcmVzcG9uc2UgPSBjb25uLnJ1bl90YXBpcignR2V0UHJvcGVydHlWYWx1ZXNPZkVsZW1lbnRzJywgewogICAgICAgICAgICAnZWxlbWVudHMnOiBjaHVuaywgJ3Byb3BlcnRpZXMnOiBwcm9wZXJ0eV9pZHN9KQogICAgICAgIGZvciBlbnRyeSBpbiByZXNwb25zZS5nZXQoJ3Byb3BlcnR5VmFsdWVzRm9yRWxlbWVudHMnLCBbXSk6CiAgICAgICAgICAgIHJvdyA9IHt9CiAgICAgICAgICAgIGZvciAoY29sdW1uLCBfKSwgdmFsdWVfZW50cnkgaW4gemlwKGNvbHVtbnMsIGVudHJ5LmdldCgncHJvcGVydHlWYWx1ZXMnLCBbXSkpOgogICAgICAgICAgICAgICAgcm93W2NvbHVtbl0gPSBleHRyYWN0X3ZhbHVlKHZhbHVlX2VudHJ5KQogICAgICAgICAgICB2YWx1ZXNfcGVyX2VsZW1lbnQuYXBwZW5kKHJvdykKICAgICAgICBkb25lID0gbWluKHN0YXJ0ICsgQ0hVTktfU0laRSwgbGVuKGVsZW1lbnRzKSkKICAgICAgICBwcmludCgnICDmlbDph4/lj5blvpfkuK0uLi4ge30ve30g5Lu2Jy5mb3JtYXQoZG9uZSwgbGVuKGVsZW1lbnRzKSkpCiAgICByZXR1cm4gdmFsdWVzX3Blcl9lbGVtZW50CgoKZGVmIGV4dHJhY3RfdmFsdWUodmFsdWVfZW50cnkpOgogICAgaWYgbm90IGlzaW5zdGFuY2UodmFsdWVfZW50cnksIGRpY3QpIG9yICdwcm9wZXJ0eVZhbHVlJyBub3QgaW4gdmFsdWVfZW50cnk6CiAgICAgICAgcmV0dXJuIE5vbmUKICAgIHB2ID0gdmFsdWVfZW50cnlbJ3Byb3BlcnR5VmFsdWUnXQogICAgaWYgcHYuZ2V0KCdzdGF0dXMnLCAnbm9ybWFsJykgIT0gJ25vcm1hbCc6CiAgICAgICAgcmV0dXJuIE5vbmUKICAgIHJldHVybiBwdi5nZXQoJ3ZhbHVlJykKCgojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQojIOmbhuioiOODu+WHuuWKmwojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKZGVmIGFzX251bWJlcih2YWx1ZSk6CiAgICByZXR1cm4gdmFsdWUgaWYgaXNpbnN0YW5jZSh2YWx1ZSwgKGludCwgZmxvYXQpKSBhbmQgbm90IGlzaW5zdGFuY2UodmFsdWUsIGJvb2wpIGVsc2UgTm9uZQoKCmRlZiBjYWxjX3ByaWNlKHR5cGVfamEsIHJvd192YWx1ZXMsIGNvdW50PTEpOgogICAgIiIi5Y2Y5L6h6KGo44Gr5Z+644Gl44GE44Gm6YeR6aGN44KS6KiI566X44GZ44KL44CC6Kit5a6a44GM44Gq44GR44KM44GwIE5vbmXjgIIiIiIKICAgIGlmIHR5cGVfamEgbm90IGluIFVOSVRfUFJJQ0VTOgogICAgICAgIHJldHVybiBOb25lCiAgICBiYXNpcywgdW5pdF9wcmljZSA9IFVOSVRfUFJJQ0VTW3R5cGVfamFdCiAgICBpZiBiYXNpcyA9PSAn5YCLJzoKICAgICAgICByZXR1cm4gY291bnQgKiB1bml0X3ByaWNlCiAgICBjb2x1bW4gPSBRVFlfQkFTSVNfQ09MVU1OLmdldChiYXNpcykKICAgIHF1YW50aXR5ID0gYXNfbnVtYmVyKHJvd192YWx1ZXMuZ2V0KGNvbHVtbikpIGlmIGNvbHVtbiBlbHNlIE5vbmUKICAgIHJldHVybiBxdWFudGl0eSAqIHVuaXRfcHJpY2UgaWYgcXVhbnRpdHkgaXMgbm90IE5vbmUgZWxzZSBOb25lCgoKZGVmIGZvcm1hdF9udW1iZXIodmFsdWUsIGRpZ2l0cz00KToKICAgIG51bWJlciA9IGFzX251bWJlcih2YWx1ZSkKICAgIGlmIG51bWJlciBpcyBOb25lOgogICAgICAgIHJldHVybiAnJyBpZiB2YWx1ZSBpcyBOb25lIGVsc2UgdmFsdWUKICAgIHJldHVybiBpbnQocm91bmQobnVtYmVyKSkgaWYgZGlnaXRzID09IDAgZWxzZSByb3VuZChudW1iZXIsIGRpZ2l0cykKCmRlZiB3cml0ZV9jc3YocGF0aCwgaGVhZGVyLCByb3dzKToKICAgIHdpdGggb3BlbihwYXRoLCAndycsIG5ld2xpbmU9JycsIGVuY29kaW5nPSd1dGYtOC1zaWcnKSBhcyBmOgogICAgICAgIHdyaXRlciA9IGNzdi53cml0ZXIoZikKICAgICAgICB3cml0ZXIud3JpdGVyb3coaGVhZGVyKQogICAgICAgIHdyaXRlci53cml0ZXJvd3Mocm93cykKICAgIHByaW50KCflh7rlipvjgZfjgb7jgZfjgZ86IHt9Jy5mb3JtYXQocGF0aCkpCgoKZGVmIG1haW4oKToKICAgIHBhcnNlciA9IGFyZ3BhcnNlLkFyZ3VtZW50UGFyc2VyKGRlc2NyaXB0aW9uPSdBcmNoaWNhZCArIFRhcGlyIOOBq+OCiOOCi+aVsOmHj+iHquWLlembhuioiCcpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLWhvc3QnLCBkZWZhdWx0PSdodHRwOi8vMTI3LjAuMC4xJykKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoJy0tcG9ydCcsIHR5cGU9aW50LCBkZWZhdWx0PTE5NzIzKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgnLS1zZWxlY3RlZCcsIGFjdGlvbj0nc3RvcmVfdHJ1ZScsIGhlbHA9J+mBuOaKnuS4reOBruimgee0oOOBoOOBkeOCkumbhuioiOOBmeOCiycpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLW91dGRpcicsIGRlZmF1bHQ9Tm9uZSwgaGVscD0nQ1NW44Gu5Ye65Yqb5YWI44OV44Kp44Or44OAICjnnIHnlaXmmYLjga/jgrnjgq/jg6rjg5fjg4jjgajlkIzjgZjloLTmiYApJykKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoJy0tbm8tcGF1c2UnLCBhY3Rpb249J3N0b3JlX3RydWUnLCBoZWxwPSfntYLkuobmmYLjgatFbnRlcuWFpeWKm+OCkuW+heOBn+OBquOBhCcpCiAgICBhcmdzLCBfID0gcGFyc2VyLnBhcnNlX2tub3duX2FyZ3MoKQoKICAgIGNvbm4gPSBjb25uZWN0KGFyZ3MuaG9zdCwgYXJncy5wb3J0KQogICAgZWxlbWVudHMgPSBnZXRfZWxlbWVudHMoY29ubiwgYXJncy5zZWxlY3RlZCkKICAgIGRldGFpbHMgPSBnZXRfZGV0YWlscyhjb25uLCBlbGVtZW50cykKICAgIHN0b3J5X25hbWVzID0gZ2V0X3N0b3J5X25hbWVzKGNvbm4pCiAgICBjb2x1bW5zID0gcmVzb2x2ZV9xdWFudGl0eV9wcm9wZXJ0aWVzKGNvbm4pCiAgICBxdWFudGl0eV9jb2x1bW5zID0gW2MgZm9yIGMsIF8gaW4gY29sdW1ucyBpZiBjICE9ICdFbGVtZW50SUQnXQogICAgdmFsdWVzID0gZ2V0X3Byb3BlcnR5X3ZhbHVlcyhjb25uLCBlbGVtZW50cywgY29sdW1ucykKCiAgICAjIC0tLS0g5piO57Sw6KGM44Gu5L2c5oiQIC0tLS0KICAgIGRldGFpbF9oZWFkZXIgPSBbJ05vJywgJ+eoruWIpScsICfnqK7liKUo6Iux6KqeKScsICdFbGVtZW50SUQnLCAn6ZqOJywgJ0dVSUQnXSArIHF1YW50aXR5X2NvbHVtbnMgKyBbJ+mHkemhjSjlhoYpJ10KICAgIGRldGFpbF9yb3dzID0gW10KICAgIHN1bW1hcnkgPSB7fSAgIyAo56iu5YilLCDpmo4pIC0+IHsnY291bnQnOiBuLCAnPOWIlz4nOiDlkIjoqIgsICfph5HpoY0nOiDlkIjoqIh9CiAgICBmb3IgaSwgZWxlbWVudCBpbiBlbnVtZXJhdGUoZWxlbWVudHMpOgogICAgICAgIGd1aWQgPSBlbGVtZW50LmdldCgnZWxlbWVudElkJywge30pLmdldCgnZ3VpZCcsICcnKQogICAgICAgIGRldGFpbCA9IGRldGFpbHNbaV0gaWYgaSA8IGxlbihkZXRhaWxzKSBhbmQgaXNpbnN0YW5jZShkZXRhaWxzW2ldLCBkaWN0KSBlbHNlIHt9CiAgICAgICAgdHlwZV9lbiA9IGRldGFpbC5nZXQoJ3R5cGUnLCAnKOS4jeaYjiknKQogICAgICAgIHR5cGVfamEgPSBUWVBFX05BTUVTX0pBLmdldCh0eXBlX2VuLCB0eXBlX2VuKQogICAgICAgIGZsb29yX2luZGV4ID0gZGV0YWlsLmdldCgnZmxvb3JJbmRleCcpCiAgICAgICAgc3RvcnkgPSBzdG9yeV9uYW1lcy5nZXQoZmxvb3JfaW5kZXgsICcnIGlmIGZsb29yX2luZGV4IGlzIE5vbmUgZWxzZSBzdHIoZmxvb3JfaW5kZXgpKQogICAgICAgIHJvd192YWx1ZXMgPSB2YWx1ZXNbaV0gaWYgaSA8IGxlbih2YWx1ZXMpIGVsc2Uge30KICAgICAgICBwcmljZSA9IGNhbGNfcHJpY2UodHlwZV9qYSwgcm93X3ZhbHVlcykKCiAgICAgICAgZGV0YWlsX3Jvd3MuYXBwZW5kKAogICAgICAgICAgICBbaSArIDEsIHR5cGVfamEsIHR5cGVfZW4sIHJvd192YWx1ZXMuZ2V0KCdFbGVtZW50SUQnLCAnJykgb3IgJycsIHN0b3J5LCBndWlkXQogICAgICAgICAgICArIFtmb3JtYXRfbnVtYmVyKHJvd192YWx1ZXMuZ2V0KGMpKSBmb3IgYyBpbiBxdWFudGl0eV9jb2x1bW5zXQogICAgICAgICAgICArIFtmb3JtYXRfbnVtYmVyKHByaWNlLCAwKV0pCgogICAgICAgIGtleSA9ICh0eXBlX2phLCBzdG9yeSkKICAgICAgICBidWNrZXQgPSBzdW1tYXJ5LnNldGRlZmF1bHQoa2V5LCB7J2NvdW50JzogMCwgJ+mHkemhjSc6IDAuMCwgJ+mHkemhjeOBguOCiic6IEZhbHNlfSkKICAgICAgICBidWNrZXRbJ2NvdW50J10gKz0gMQogICAgICAgIGZvciBjb2x1bW4gaW4gcXVhbnRpdHlfY29sdW1uczoKICAgICAgICAgICAgbnVtYmVyID0gYXNfbnVtYmVyKHJvd192YWx1ZXMuZ2V0KGNvbHVtbikpCiAgICAgICAgICAgIGlmIG51bWJlciBpcyBub3QgTm9uZToKICAgICAgICAgICAgICAgIGJ1Y2tldFtjb2x1bW5dID0gYnVja2V0LmdldChjb2x1bW4sIDAuMCkgKyBudW1iZXIKICAgICAgICBpZiBwcmljZSBpcyBub3QgTm9uZToKICAgICAgICAgICAgYnVja2V0Wyfph5HpoY0nXSArPSBwcmljZQogICAgICAgICAgICBidWNrZXRbJ+mHkemhjeOBguOCiiddID0gVHJ1ZQoKICAgICMgLS0tLSDpm4boqIjooYzjga7kvZzmiJAgKOeoruWIpcOX6ZqOICsg56iu5Yil5ZCI6KiIKSAtLS0tCiAgICBzdW1tYXJ5X2hlYWRlciA9IFsn56iu5YilJywgJ+majicsICflgIvmlbAnXSArIFsne30g5ZCI6KiIJy5mb3JtYXQoYykgZm9yIGMgaW4gcXVhbnRpdHlfY29sdW1uc10gKyBbJ+mHkemhjSjlhoYpIOWQiOioiCddCiAgICBzdW1tYXJ5X3Jvd3MgPSBbXQogICAgZm9yIHR5cGVfamEgaW4gc29ydGVkKHtrWzBdIGZvciBrIGluIHN1bW1hcnl9KToKICAgICAgICB0eXBlX3RvdGFsID0geydjb3VudCc6IDAsICfph5HpoY0nOiAwLjAsICfph5HpoY3jgYLjgoonOiBGYWxzZX0KICAgICAgICBrZXlzID0gc29ydGVkKChrIGZvciBrIGluIHN1bW1hcnkgaWYga1swXSA9PSB0eXBlX2phKSwga2V5PWxhbWJkYSBrOiBrWzFdKQogICAgICAgIGZvciBrZXkgaW4ga2V5czoKICAgICAgICAgICAgYnVja2V0ID0gc3VtbWFyeVtrZXldCiAgICAgICAgICAgIHN1bW1hcnlfcm93cy5hcHBlbmQoCiAgICAgICAgICAgICAgICBbdHlwZV9qYSwga2V5WzFdLCBidWNrZXRbJ2NvdW50J11dCiAgICAgICAgICAgICAgICArIFtmb3JtYXRfbnVtYmVyKGJ1Y2tldC5nZXQoYyksIDMpIGZvciBjIGluIHF1YW50aXR5X2NvbHVtbnNdCiAgICAgICAgICAgICAgICArIFtmb3JtYXRfbnVtYmVyKGJ1Y2tldFsn6YeR6aGNJ10sIDApIGlmIGJ1Y2tldFsn6YeR6aGN44GC44KKJ10gZWxzZSAnJ10pCiAgICAgICAgICAgIHR5cGVfdG90YWxbJ2NvdW50J10gKz0gYnVja2V0Wydjb3VudCddCiAgICAgICAgICAgIGZvciBjb2x1bW4gaW4gcXVhbnRpdHlfY29sdW1uczoKICAgICAgICAgICAgICAgIGlmIGNvbHVtbiBpbiBidWNrZXQ6CiAgICAgICAgICAgICAgICAgICAgdHlwZV90b3RhbFtjb2x1bW5dID0gdHlwZV90b3RhbC5nZXQoY29sdW1uLCAwLjApICsgYnVja2V0W2NvbHVtbl0KICAgICAgICAgICAgaWYgYnVja2V0Wyfph5HpoY3jgYLjgoonXToKICAgICAgICAgICAgICAgIHR5cGVfdG90YWxbJ+mHkemhjSddICs9IGJ1Y2tldFsn6YeR6aGNJ10KICAgICAgICAgICAgICAgIHR5cGVfdG90YWxbJ+mHkemhjeOBguOCiiddID0gVHJ1ZQogICAgICAgIHN1bW1hcnlfcm93cy5hcHBlbmQoCiAgICAgICAgICAgIFt0eXBlX2phLCAn4piF5ZCI6KiIJywgdHlwZV90b3RhbFsnY291bnQnXV0KICAgICAgICAgICAgKyBbZm9ybWF0X251bWJlcih0eXBlX3RvdGFsLmdldChjKSwgMykgZm9yIGMgaW4gcXVhbnRpdHlfY29sdW1uc10KICAgICAgICAgICAgKyBbZm9ybWF0X251bWJlcih0eXBlX3RvdGFsWyfph5HpoY0nXSwgMCkgaWYgdHlwZV90b3RhbFsn6YeR6aGN44GC44KKJ10gZWxzZSAnJ10pCgogICAgIyAtLS0tIOWHuuWKmyAtLS0tCiAgICBvdXRkaXIgPSBhcmdzLm91dGRpciBvciBvcy5wYXRoLmRpcm5hbWUob3MucGF0aC5hYnNwYXRoKF9fZmlsZV9fKSkKICAgIG9zLm1ha2VkaXJzKG91dGRpciwgZXhpc3Rfb2s9VHJ1ZSkKICAgIHN0YW1wID0gZGF0ZXRpbWUuZGF0ZXRpbWUubm93KCkuc3RyZnRpbWUoJyVZJW0lZC0lSCVNJVMnKQogICAgd3JpdGVfY3N2KG9zLnBhdGguam9pbihvdXRkaXIsICdCSU3nqY3nrpdf5piO57SwX3t9LmNzdicuZm9ybWF0KHN0YW1wKSksIGRldGFpbF9oZWFkZXIsIGRldGFpbF9yb3dzKQogICAgd3JpdGVfY3N2KG9zLnBhdGguam9pbihvdXRkaXIsICdCSU3nqY3nrpdf6ZuG6KiIX3t9LmNzdicuZm9ybWF0KHN0YW1wKSksIHN1bW1hcnlfaGVhZGVyLCBzdW1tYXJ5X3Jvd3MpCiAgICBwcmludCgn5a6M5LqG44GX44G+44GX44Gf44CC6KaB57SgIHt9IOS7tiAvIOeoruWIpSB7fSDnqK7jgpLpm4boqIjjgZfjgb7jgZfjgZ/jgIInLmZvcm1hdCgKICAgICAgICBsZW4oZWxlbWVudHMpLCBsZW4oe2tbMF0gZm9yIGsgaW4gc3VtbWFyeX0pKSkKICAgIGlmIG5vdCBVTklUX1BSSUNFUzoKICAgICAgICBwcmludCgn44OS44Oz44OIOiDjgrnjgq/jg6rjg5fjg4jlhpLpoK3jga4gVU5JVF9QUklDRVMg44Gr5Y2Y5L6h44KS6Kit5a6a44GZ44KL44Go5qaC566X6YeR6aGN44KC6KiI566X44GV44KM44G+44GZ44CCJykKCgppZiBfX25hbWVfXyA9PSAnX19tYWluX18nOgogICAgcGF1c2UgPSAnLS1uby1wYXVzZScgbm90IGluIHN5cy5hcmd2CiAgICB0cnk6CiAgICAgICAgbWFpbigpCiAgICAgICAgZXhpdF9jb2RlID0gMAogICAgZXhjZXB0IFN5c3RlbUV4aXQgYXMgZToKICAgICAgICBpZiBlLmNvZGUgbm90IGluICgwLCBOb25lKToKICAgICAgICAgICAgcHJpbnQoJ1xu44Ko44Op44O8OiB7fScuZm9ybWF0KGUpKQogICAgICAgIGV4aXRfY29kZSA9IDAgaWYgZS5jb2RlIGluICgwLCBOb25lKSBlbHNlIDEKICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICBwcmludCgnXG7kuojmnJ/jgZfjgarjgYTjgqjjg6njg7zjgYznmbrnlJ/jgZfjgb7jgZfjgZ86IHt9Jy5mb3JtYXQoZSkpCiAgICAgICAgZXhpdF9jb2RlID0gMQogICAgaWYgcGF1c2U6CiAgICAgICAgdHJ5OgogICAgICAgICAgICBpbnB1dCgnXG5FbnRlcuOCreODvOOCkuaKvOOBmeOBqOe1guS6huOBl+OBvuOBmS4uLicpCiAgICAgICAgZXhjZXB0IEVPRkVycm9yOgogICAgICAgICAgICBwYXNzCiAgICBzeXMuZXhpdChleGl0X2NvZGUpCg==" download="BIM自動積算.py">⬇ BIM自動積算.py をダウンロード</a>
+    <a class="btn sub" href="https://raw.githubusercontent.com/ooki-atsufumi/tapir-archicad-automation/claude/bim-handoff-guide-html-3qf5br/bim-estimation/BIM%E8%87%AA%E5%8B%95%E7%A9%8D%E7%AE%97.py" download="BIM自動積算.py" target="_blank" rel="noopener">GitHub から入手（予備）</a>
+  </p>
+  <ul>
+    <li>保存先はどこでも構いません。おすすめは <b>デスクトップに「BIM積算」フォルダ</b>を作ってそこに置くことです（結果のCSVも同じ場所に出力されます）。</li>
+    <li>ファイル名は <code>BIM自動積算.py</code> のままにしてください。</li>
+  </ul>
+  <p class="note"><b>ブラウザに「安全でない可能性」と表示された場合:</b> 中身はテキストのPythonスクリプトです。「保存」「継続」を選択してください。気になる場合はメモ帳で開けば全コードを確認できます。</p>
+</section>
+
+<section>
+  <h2><span class="step">ステップ 4</span>実行する</h2>
+  <ol>
+    <li><b>Archicad を起動し、積算したいプロジェクトを開いておきます</b>（これが最重要。閉じていると接続エラーになります）。</li>
+    <li><code>BIM自動積算.py</code> を<b>ダブルクリック</b>します。黒いウィンドウが開き、処理状況が表示されます。</li>
+    <li>「完了しました」と表示されたら、スクリプトと同じフォルダに2つのCSVができています。Enter キーでウィンドウを閉じます。</li>
+  </ol>
+  <p>コマンドプロンプトから実行する場合（オプション指定ができます）:</p>
+  <pre><code>cd デスクトップ\BIM積算
+python BIM自動積算.py               … プロジェクトの全要素を集計
+python BIM自動積算.py --selected    … Archicadで選択中の要素だけ集計
+python BIM自動積算.py --outdir C:\out  … 出力先フォルダを指定
+python BIM自動積算.py --port 19724  … Archicadを複数起動しているとき</code></pre>
+  <p>Mac の場合はターミナルで <code>python3 BIM自動積算.py</code> と入力します。</p>
+
+  <h3>出力されるファイル</h3>
+  <div class="scroll"><table>
+    <tr><th>ファイル</th><th>内容</th></tr>
+    <tr><td><code>BIM積算_明細_日時.csv</code></td><td>1要素＝1行の明細。種別／ElementID／階／GUID／高さ・幅・厚み・長さ・面積・体積／金額</td></tr>
+    <tr><td><code>BIM積算_集計_日時.csv</code></td><td>要素種別×階ごとの個数・数量合計・金額合計と、種別ごとの「★合計」行</td></tr>
+  </table></div>
+  <ul>
+    <li>単位はメートル系（m / m² / m³）です。</li>
+    <li>UTF-8（BOM付き）で保存されるため、<b>Excel でダブルクリックしてもそのまま文字化けせずに開けます</b>。</li>
+    <li>要素の種類によって取得できない数量は空欄になります（例: ドアに体積はありません）。</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="step">応用</span>単価を設定して概算金額を出す</h2>
+  <p><code>BIM自動積算.py</code> をメモ帳などで開くと、冒頭に <b>UNIT_PRICES（単価表）</b>があります。行頭の <code>#</code> を外して単価を入れるだけで金額列が計算されます。</p>
+  <pre><code>UNIT_PRICES = {
+    '壁':     ('体積', 45000),   # 壁は 45,000円/m3 で計算
+    'スラブ': ('体積', 38000),
+    'ドア':   ('個',   80000),   # ドアは 1枚 80,000円
+}</code></pre>
+  <ul>
+    <li>基準は <code>'体積'</code>（円/m³）・<code>'面積'</code>（円/m²）・<code>'長さ'</code>（円/m）・<code>'個'</code>（円/個）の4種類です。</li>
+    <li>種別名は明細CSVの「種別」列の文字列（壁・柱・梁・スラブ・屋根・ゾーン・ドア・窓 など）と一致させてください。</li>
+    <li>保存するときは<b>文字コード UTF-8 のまま</b>保存してください（メモ帳は既定でUTF-8です）。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>トラブルシューティング</h2>
+  <div class="scroll"><table>
+    <tr><th>症状</th><th>原因と対処</th></tr>
+    <tr><td>「Archicad に接続できませんでした」</td><td>Archicad が起動していない／プロジェクトを開いていない。起動して開いてから再実行。複数起動時は <code>--port 19724</code> を試す（2つ目の Archicad はポート番号が1つずつ増えます）。</td></tr>
+    <tr><td>「Tapir アドオンが見つかりませんでした」</td><td>ステップ2が未完了、またはバージョン違いのファイルを入れている。アドオンマネージャーで Tapir にチェックが入っているか確認。</td></tr>
+    <tr><td>「python は認識されていません」</td><td>Python の PATH 設定漏れ。ステップ1の「Add python.exe to PATH」を参照して再インストール。</td></tr>
+    <tr><td>ダブルクリックでメモ帳が開いてしまう</td><td>.py がエディタに関連付けられている。右クリック→「プログラムから開く」→ Python を選択。またはコマンドプロンプトから実行。</td></tr>
+    <tr><td>CSV が Excel で文字化けする</td><td>通常は起きません（BOM付きUTF-8）。起きた場合は Excel の「データ」→「テキストまたはCSVから」で文字コード UTF-8 を指定して取り込み。</td></tr>
+    <tr><td>数量列の一部が空欄</td><td>その要素種別に該当する数量が存在しない（正常な動作）。より詳細な数量が必要な場合は下記「発展」参照。</td></tr>
+    <tr><td>要素数が多く時間がかかる</td><td>300件ずつ処理して進捗を表示します。数千要素で数分かかることがあります。<code>--selected</code> で対象を絞るのも有効。</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>技術メモ（引き継ぎを受けて改造する方へ）</h2>
+  <p>スクリプトは Python 標準ライブラリのみで書かれており、処理の流れは次のとおりです。</p>
+  <ol>
+    <li><code>API.GetProductInfo</code> — Archicad への接続確認（公式JSONコマンド）</li>
+    <li><code>TapirCommand.GetAddOnVersion</code> — Tapir の存在確認</li>
+    <li><code>TapirCommand.GetAllElements</code>（または <code>GetSelectedElements</code>）— 対象要素のGUID一覧を取得</li>
+    <li><code>TapirCommand.GetDetailsOfElements</code> — 要素種別・所属階を取得</li>
+    <li><code>TapirCommand.GetStories</code> — 階名の解決</li>
+    <li><code>API.GetAllPropertyNames</code> ＋ <code>API.GetPropertyIds</code> — 使用可能な組み込み数量プロパティ（General_Height / General_Volume 等）を自動検出。Archicad のバージョン差で存在しないプロパティは自動でスキップします。</li>
+    <li><code>TapirCommand.GetPropertyValuesOfElements</code> — 数量値を300件ずつ一括取得</li>
+    <li>Python 側で 種別×階 に集計し、CSV（utf-8-sig）で出力</li>
+  </ol>
+  <p>発展させる場合のヒント:</p>
+  <ul>
+    <li>仕上・スキン別の数量が必要なら、Tapir の <code>GetCompositesCommand</code> や <code>GetBuildingMaterialPhysicalProperties</code> を組み合わせる。</li>
+    <li>ユーザー定義プロパティ（自社の積算コードなど）は <code>API.GetPropertyIds</code> に <code>{"type":"UserDefined","localizedName":["グループ名","プロパティ名"]}</code> を渡せば同じ仕組みで取得できます。</li>
+    <li>コマンド一覧・仕様: <a href="https://enzyme-apd.github.io/tapir-archicad-automation/archicad-addon" target="_blank" rel="noopener">Tapir コマンドリファレンス</a></li>
+  </ul>
+  <h3>参考リンク</h3>
+  <ul>
+    <li><a href="https://github.com/ENZYME-APD/tapir-archicad-automation" target="_blank" rel="noopener">Tapir 公式リポジトリ（GitHub）</a></li>
+    <li><a href="https://github.com/ENZYME-APD/tapir-archicad-automation/wiki" target="_blank" rel="noopener">Tapir 開発者Wiki</a></li>
+    <li><a href="https://www.python.org/downloads/" target="_blank" rel="noopener">Python 公式ダウンロード</a></li>
+  </ul>
+</section>
+
+<footer>
+  BIM自動積算 引き継ぎ書 — このHTMLは単体で完結しています（スクリプト本体を内蔵）。そのままメール添付・共有フォルダ配布が可能です。
+</footer>
+
+</div>
+</body>
+</html>
