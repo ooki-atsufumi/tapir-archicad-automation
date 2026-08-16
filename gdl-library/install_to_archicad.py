@@ -36,6 +36,12 @@ def ParseArgs ():
                          help = 'ライブラリ部品の種別 (Object / Lamp / Door / Window ...)')
     parser.add_argument ('--keep-gsm', dest = 'keepGsm', type = str, default = None,
                          help = '変換した .gsm を残すフォルダ')
+    # --host / --port は aclib 側でも解釈される。ここでは --help に出すために宣言する。
+    # Tapir パレットの About ダイアログに実際のポート番号が表示される。
+    parser.add_argument ('--host', dest = 'host', type = str, default = 'http://127.0.0.1',
+                         help = 'Archicad のホスト (既定: http://127.0.0.1)')
+    parser.add_argument ('--port', dest = 'port', type = int, default = 19723,
+                         help = 'Tapir のポート番号 (既定: 19723)')
     args, _ = parser.parse_known_args ()
     return args
 
@@ -92,11 +98,16 @@ def main ():
         version = None
         print ('接続エラー: {}'.format (e), file = sys.stderr)
     if not version:
-        sys.exit ('Archicad の Tapir アドオンに接続できない。\n'
+        sys.exit ('{}:{} の Tapir アドオンに接続できない。\n'
                   '  ・Archicad が起動しているか\n'
                   '  ・Tapir アドオンが読み込まれているか\n'
-                  '  ・このスクリプトを Archicad と同じ PC で実行しているか を確認してほしい。')
-    print ('Tapir アドオン: {}'.format (version.get ('version', '?')))
+                  '  ・ポート番号が合っているか\n'
+                  '    （Tapir パレットの ? ボタンで開く About に表示される。\n'
+                  '      既定の 19723 でない場合は --port <番号> を付ける）\n'
+                  '  ・このスクリプトを Archicad と同じ PC で実行しているか'
+                  .format (aclib.host, aclib.port))
+    print ('Tapir アドオン: {} ({}:{})'.format (
+        version.get ('version', '?'), aclib.host, aclib.port))
 
     converter = FindConverter (args.converter)
     print ('LP_XMLConverter: {}'.format (converter))

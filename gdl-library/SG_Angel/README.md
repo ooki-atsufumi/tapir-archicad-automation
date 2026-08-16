@@ -47,8 +47,13 @@ Tapir アドオンを読み込んだ Archicad が**起動している状態**で
 
 ```bat
 cd gdl-library
-python install_to_archicad.py
+python install_to_archicad.py --port 19724
 ```
+
+> **ポート番号に注意。** 既定は 19723 だが、環境によって変わる。
+> 実際の番号は Tapir パレットの `?` ボタンで開く About ダイアログに
+> `Version: 1.5.9, Port: 19724` のように表示される。
+> 19723 の場合は `--port` を省略してよい。
 
 スクリプトがやること:
 
