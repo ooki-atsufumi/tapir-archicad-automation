@@ -3892,6 +3892,10 @@ GS::Optional<GS::UniString> CreateWindowsCommand::GetInputParametersSchema () co
                         "reflected": { "type": "boolean" },
                         "refSide": { "type": "boolean" },
                         "oSide": { "type": "boolean" },
+                        "libraryPartName": {
+                            "type": "string",
+                            "description": "Optional. Localized library part name (docu_UName) to place instead of the tool default/favorite, e.g. a shutter part that has no favorite. Applied to the tool defaults before cloning."
+                        },
                         "favoriteName": {
                             "type": "string",
                             "description": "Optional. Name of an existing Window favorite (as returned by `GetFavoritesByType`). Applied to the Window tool defaults before the create."
@@ -3919,6 +3923,58 @@ GS::Optional<GS::UniString> CreateWindowsCommand::GetRawResponseSchema () const
         "additionalProperties": false,
         "required": ["elements"]
     })";
+}
+
+
+// Apply a LIBRARY PART (by localized docu_UName, e.g. JPN shutter "一般_重量") to the
+// Door/Window tool defaults BEFORE PrepareWindowOrDoorDefaults, so the cloned
+// defaults + marker are consistent (same rationale as the favorite helper above).
+// Field absent -> NoError (tool defaults kept). For parts that have no favorite
+// (shutters, grilles, high-speed doors ...). kanehide-patches 2026-09-04.
+static GSErrCode ApplyWindowOrDoorLibraryPartToDefaults (const GS::ObjectState& data, API_ElemTypeID typeId)
+{
+    GS::UniString libName;
+    if (!data.Get ("libraryPartName", libName) || libName.IsEmpty ()) {
+        return NoError;
+    }
+    API_LibPart libPart = {};
+    GS::ucscpy (libPart.docu_UName, libName.ToUStr ());
+    GSErrCode err = ACAPI_LibraryPart_Search (&libPart, false, true);
+    delete libPart.location;
+    if (err != NoError) {
+        return err;
+    }
+
+    API_Element element = {};
+    API_ElementMemo memo = {};
+#ifdef ServerMainVers_2600
+    element.header.type = typeId;
+#else
+    element.header.typeID = typeId;
+#endif
+    err = ACAPI_Element_GetDefaults (&element, &memo);
+    if (err != NoError) {
+        return err;
+    }
+    const GS::OnExit cleanup ([&]() { ACAPI_DisposeElemMemoHdls (&memo); });
+
+    double a = 0.0, b = 0.0;
+    Int32 addParNum = 0;
+    API_AddParType** addPars = nullptr;
+    err = ACAPI_LibraryPart_GetParams (libPart.index, &a, &b, &addParNum, &addPars);
+    if (err != NoError) {
+        return err;
+    }
+    if (memo.params != nullptr) {
+        ACAPI_DisposeAddParHdl (&memo.params);
+    }
+    memo.params = addPars;
+    element.window.openingBase.libInd = libPart.index;
+
+    API_Element mask;
+    ACAPI_ELEMENT_MASK_CLEAR (mask);
+    ACAPI_ELEMENT_MASK_SET (mask, API_WindowType, openingBase.libInd);
+    return ACAPI_Element_ChangeDefaults (&element, &memo, &mask);
 }
 
 GS::ObjectState CreateWindowsCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl&) const
@@ -3977,6 +4033,13 @@ GS::ObjectState CreateWindowsCommand::Execute (const GS::ObjectState& parameters
             // after leaves the marker pointing at the previous libpart,
             // causing CreateExt to fail with -2130313110.
             GSErrCode err = ApplyWindowOrDoorFavoriteToDefaults (data, API_WindowID);
+            if (err == NoError) {
+                err = ApplyWindowOrDoorLibraryPartToDefaults (data, API_WindowID);
+                if (err != NoError) {
+                    elements.Push (CreateErrorResponse (err, "Failed to resolve `libraryPartName` for window."));
+                    continue;
+                }
+            }
             if (err != NoError) {
                 elements.Push (CreateErrorResponse (err, "Failed to resolve `favoriteName` for window."));
                 continue;
@@ -4062,6 +4125,10 @@ GS::Optional<GS::UniString> CreateDoorsCommand::GetInputParametersSchema () cons
                         "reflected": { "type": "boolean" },
                         "refSide": { "type": "boolean" },
                         "oSide": { "type": "boolean" },
+                        "libraryPartName": {
+                            "type": "string",
+                            "description": "Optional. Localized library part name (docu_UName) to place instead of the tool default/favorite, e.g. a shutter part that has no favorite. Applied to the tool defaults before cloning."
+                        },
                         "favoriteName": {
                             "type": "string",
                             "description": "Optional. Name of an existing Door favorite (as returned by `GetFavoritesByType`). Applied to the Door tool defaults before the create."
@@ -4147,6 +4214,13 @@ GS::ObjectState CreateDoorsCommand::Execute (const GS::ObjectState& parameters, 
             // after leaves the marker pointing at the previous libpart,
             // causing CreateExt to fail with -2130313110.
             GSErrCode err = ApplyWindowOrDoorFavoriteToDefaults (data, API_DoorID);
+            if (err == NoError) {
+                err = ApplyWindowOrDoorLibraryPartToDefaults (data, API_DoorID);
+                if (err != NoError) {
+                    elements.Push (CreateErrorResponse (err, "Failed to resolve `libraryPartName` for door."));
+                    continue;
+                }
+            }
             if (err != NoError) {
                 elements.Push (CreateErrorResponse (err, "Failed to resolve `favoriteName` for door."));
                 continue;
