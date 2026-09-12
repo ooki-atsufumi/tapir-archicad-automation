@@ -1,6 +1,8 @@
 #include "GraphicalOverrideCommands.hpp"
 #include "MigrationHelper.hpp"
 
+#ifdef ServerMainVers_2700
+// Override rule groups exist from Archicad 27.
 static GSErrCode FindOrCreateRuleGroup (const GS::UniString& name, API_Guid& outGuid)
 {
     GS::Array<API_Guid> groupIds;
@@ -23,6 +25,7 @@ static GSErrCode FindOrCreateRuleGroup (const GS::UniString& name, API_Guid& out
     outGuid = group.guid;
     return NoError;
 }
+#endif
 
 CreateGraphicalOverrideRuleCommand::CreateGraphicalOverrideRuleCommand () :
     CommandBase (CommonSchema::Used)

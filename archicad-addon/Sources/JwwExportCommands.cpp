@@ -578,6 +578,16 @@ void ExportAttributeTables (JsonOut& js)
     js.Raw ("\"fonts\":{");
     {
         bool first = true;
+        auto emitFont = [&] (Int32 i, const GS::UniString& name) {
+            if (name.IsEmpty ()) return;
+            if (!first) js.Raw (",");
+            first = false;
+            char key[16];
+            snprintf (key, sizeof key, "%d", i);
+            js.Str (key); js.Raw (":");
+            js.Str (UniToUtf8 (name));
+        };
+#ifdef ServerMainVers_2700
         Int32 numFonts = ACAPI_Font_GetFontNum ();
         for (Int32 i = 1; i <= numFonts; i++) {
             API_FontType font = {};
@@ -585,14 +595,21 @@ void ExportAttributeTables (JsonOut& js)
             font.head.index = i;
             font.head.uniStringNamePtr = &name;
             if (ACAPI_Font_GetFont (font) != NoError) continue;
-            if (name.IsEmpty ()) continue;
-            if (!first) js.Raw (",");
-            first = false;
-            char key[16];
-            snprintf (key, sizeof key, "%d", i);
-            js.Str (key); js.Raw (":");
-            js.Str (UniToUtf8 (name));
+            emitFont (i, name);
         }
+#else
+        // Archicad 25/26: fonts are ordinary attributes (API_FontID); ACAPI_Font_* does not exist yet.
+        API_AttributeIndex numFonts = 0;
+        if (ACAPI_Attribute_GetNum (API_FontID, &numFonts) == NoError) {
+            for (API_AttributeIndex i = 1; i <= numFonts; i++) {
+                API_Attribute attr = {};
+                attr.header.typeID = API_FontID;
+                attr.header.index = i;
+                if (ACAPI_Attribute_Get (&attr) != NoError) continue;
+                emitFont (static_cast<Int32> (i), GS::UniString (attr.header.name));
+            }
+        }
+#endif
     }
     js.Raw ("},\n");
 }
@@ -730,7 +747,7 @@ GS::ObjectState ExportJwwJsonCommand::Execute (const GS::ObjectState& parameters
             elem.header.guid = guid;
             if (ACAPI_Element_Get (&elem) != NoError) { nErr++; continue; }
 
-            if (elem.header.type.typeID == API_DimensionID) {
+            if (GetElemTypeId (elem.header) == API_DimensionID) {
                 API_ElementMemo memo = {};
                 if (ACAPI_Element_GetMemo (guid, &memo) == NoError) {
                     gCtx.first = firstElem;
@@ -742,7 +759,7 @@ GS::ObjectState ExportJwwJsonCommand::Execute (const GS::ObjectState& parameters
                 continue;
             }
 
-            const API_ElemTypeID tid = elem.header.type.typeID;
+            const API_ElemTypeID tid = GetElemTypeId (elem.header);
             // GDLパラメータ参照文字の解決とフォールバック用に、文字を持ちうる要素は
             // ShapePrims の前に memo を取っておく
             const bool needMemo = (tid == API_ObjectID || tid == API_LampID ||
