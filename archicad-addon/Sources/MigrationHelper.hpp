@@ -152,6 +152,12 @@ inline GSErrCode ACAPI_ProjectOperation_Save ()
     return ACAPI_Automate (APIDo_SaveID);
 }
 
+// Pre-27 Save-As: APIDo_SaveID takes the target file as par1 (API_FileSavePars*).
+inline GSErrCode ACAPI_ProjectOperation_Save (const API_FileSavePars* fileSavePars)
+{
+    return ACAPI_Automate (APIDo_SaveID, (void*) fileSavePars);
+}
+
 inline GSErrCode ACAPI_ProjectOperation_Print (const API_PrintPars* printPars)
 {
     return ACAPI_Automate (APIDo_PrintID, (void*) printPars);

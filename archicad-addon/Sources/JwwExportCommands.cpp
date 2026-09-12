@@ -148,7 +148,7 @@ void EmitCommonHead (const API_Prim_Head& head)
 {
     JsonOut& js = *gCtx.js;
     js.Raw (",");
-    js.KVi ("lay", head.layer.ToInt32_Deprecated ());
+    js.KVi ("lay", GetAttributeIndex (head.layer));
     js.Raw (",");
     js.KVi ("pen", head.pen.penIndex);
     if (gCtx.inHatchLines) { js.Raw (","); js.KVi ("hl", 1); }
@@ -169,7 +169,7 @@ GSErrCode PrimCallback (const API_PrimElement* prim,
             EmitBegin ();
             js.KVs ("t", "L");
             EmitCommonHead (l.head);
-            js.Raw (","); js.KVi ("lt", l.ltypeInd.ToInt32_Deprecated ());
+            js.Raw (","); js.KVi ("lt", GetAttributeIndex (l.ltypeInd));
             js.Raw (","); js.KV ("x1", l.c1.x * 1000.0);
             js.Raw (","); js.KV ("y1", l.c1.y * 1000.0);
             js.Raw (","); js.KV ("x2", l.c2.x * 1000.0);
@@ -183,7 +183,7 @@ GSErrCode PrimCallback (const API_PrimElement* prim,
             EmitBegin ();
             js.KVs ("t", "A");
             EmitCommonHead (a.head);
-            js.Raw (","); js.KVi ("lt", a.ltypeInd.ToInt32_Deprecated ());
+            js.Raw (","); js.KVi ("lt", GetAttributeIndex (a.ltypeInd));
             js.Raw (","); js.KV ("cx", a.orig.x * 1000.0);
             js.Raw (","); js.KV ("cy", a.orig.y * 1000.0);
             js.Raw (","); js.KV ("r",  a.r * 1000.0);
@@ -238,7 +238,7 @@ GSErrCode PrimCallback (const API_PrimElement* prim,
             EmitBegin ();
             js.KVs ("t", "PL");
             EmitCommonHead (p.head);
-            js.Raw (","); js.KVi ("lt", p.ltypeInd.ToInt32_Deprecated ());
+            js.Raw (","); js.KVi ("lt", GetAttributeIndex (p.ltypeInd));
             js.Raw (","); js.Key ("pts"); js.Raw ("[");
             for (Int32 i = 1; i <= p.nCoords; i++) {
                 if (i > 1) js.Raw (",");
@@ -390,7 +390,7 @@ void ExportDimension (JsonOut& js, const API_Element& elem,
     first = false;
     js.Raw ("{");
     js.KVs ("t", "DIM");
-    js.Raw (","); js.KVi ("lay", elem.header.layer.ToInt32_Deprecated ());
+    js.Raw (","); js.KVi ("lay", GetAttributeIndex (elem.header.layer));
     js.Raw (","); js.KVi ("pen", elem.dimension.linPen);
     js.Raw (","); js.KV ("dirx", elem.dimension.direction.x);
     js.Raw (","); js.KV ("diry", elem.dimension.direction.y);
@@ -447,7 +447,7 @@ void ExportTextElement (JsonOut& js, const API_Element& elem,
     if (memo.textContent != nullptr)
         content = UniToUtf8 (GS::UniString (*memo.textContent));
     EmitTextRecord (js, first,
-        elem.header.layer.ToInt32_Deprecated (), elem.text.pen, elem.text.font,
+        GetAttributeIndex (elem.header.layer), elem.text.pen, elem.text.font,
         elem.text.loc.x, elem.text.loc.y, elem.text.size,
         elem.text.angle, elem.text.widthFactor, content);
 }
@@ -464,7 +464,7 @@ void ExportLabel (JsonOut& js, const API_Element& elem,
         return;
     const API_TextType& t = elem.label.u.text;
     EmitTextRecord (js, first,
-        elem.header.layer.ToInt32_Deprecated (), t.pen, t.font,
+        GetAttributeIndex (elem.header.layer), t.pen, t.font,
         t.loc.x, t.loc.y, t.size, t.angle, t.widthFactor, content);
 }
 
@@ -475,7 +475,7 @@ void ExportZoneStamp (JsonOut& js, const API_Element& elem, bool& first)
     std::string s = name;
     if (!no.empty ()) s += "\n" + no;
     EmitTextRecord (js, first,
-        elem.header.layer.ToInt32_Deprecated (), elem.zone.pen, 0,
+        GetAttributeIndex (elem.header.layer), elem.zone.pen, 0,
         elem.zone.pos.x, elem.zone.pos.y, 3.0,
         elem.zone.stampAngle, 1.0, s);
 }
@@ -495,7 +495,7 @@ void ExportAttributeTables (JsonOut& js)
                 if (!first) js.Raw (",");
                 first = false;
                 char key[16];
-                snprintf (key, sizeof key, "%d", a.header.index.ToInt32_Deprecated ());
+                snprintf (key, sizeof key, "%d", GetAttributeIndex (a.header.index));
                 js.Str (key); js.Raw (":");
                 js.Str (UniToUtf8 (GS::UniString (a.header.name)));
             }
@@ -511,7 +511,7 @@ void ExportAttributeTables (JsonOut& js)
                 if ((a.header.flags & APILay_Hidden) == 0) continue;
                 if (!first) js.Raw (",");
                 first = false;
-                js.Int (a.header.index.ToInt32_Deprecated ());
+                js.Int (GetAttributeIndex (a.header.index));
             }
         }
     }
@@ -527,7 +527,7 @@ void ExportAttributeTables (JsonOut& js)
                 if (!first) js.Raw (",");
                 first = false;
                 char key[16];
-                snprintf (key, sizeof key, "%d", a.header.index.ToInt32_Deprecated ());
+                snprintf (key, sizeof key, "%d", GetAttributeIndex (a.header.index));
                 js.Str (key); js.Raw (":");
                 js.Str (UniToUtf8 (GS::UniString (a.header.name)));
             }
@@ -539,21 +539,38 @@ void ExportAttributeTables (JsonOut& js)
     js.Raw ("\"pens\":{");
     {
         bool first = true;
+        auto emitPen = [&] (unsigned int index, const API_RGBColor& rgb) {
+            if (!first) js.Raw (",");
+            first = false;
+            char key[16];
+            snprintf (key, sizeof key, "%u", index);
+            js.Str (key); js.Raw (":[");
+            js.Int (static_cast<long> (rgb.f_red   * 255.0 + 0.5)); js.Raw (",");
+            js.Int (static_cast<long> (rgb.f_green * 255.0 + 0.5)); js.Raw (",");
+            js.Int (static_cast<long> (rgb.f_blue  * 255.0 + 0.5)); js.Raw ("]");
+        };
+#ifdef ServerMainVers_2700
         UInt32 penCount = 0;
         ACAPI_Attribute_GetPenNum (penCount);
         for (UInt32 i = 1; i <= penCount; i++) {
             API_Pen pen = {};
             pen.index = static_cast<short> (i);
             if (ACAPI_Attribute_GetPen (pen) != NoError) continue;
-            if (!first) js.Raw (",");
-            first = false;
-            char key[16];
-            snprintf (key, sizeof key, "%u", i);
-            js.Str (key); js.Raw (":[");
-            js.Int (static_cast<long> (pen.rgb.f_red   * 255.0 + 0.5)); js.Raw (",");
-            js.Int (static_cast<long> (pen.rgb.f_green * 255.0 + 0.5)); js.Raw (",");
-            js.Int (static_cast<long> (pen.rgb.f_blue  * 255.0 + 0.5)); js.Raw ("]");
+            emitPen (i, pen.rgb);
         }
+#else
+        // Archicad 25/26: pens are ordinary attributes (API_PenID); API_Pen does not exist yet.
+        API_AttributeIndex penCount = 0;
+        if (ACAPI_Attribute_GetNum (API_PenID, &penCount) == NoError) {
+            for (API_AttributeIndex i = 1; i <= penCount; i++) {
+                API_Attribute attr = {};
+                attr.header.typeID = API_PenID;
+                attr.header.index = i;
+                if (ACAPI_Attribute_Get (&attr) != NoError) continue;
+                emitPen (static_cast<unsigned int> (i), attr.pen.rgb);
+            }
+        }
+#endif
     }
     js.Raw ("},\n");
 

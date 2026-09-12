@@ -1,4 +1,5 @@
 #include "MEPCommands.hpp"
+#include "MigrationHelper.hpp"
 
 #ifdef ServerMainVers_2800
 #include "ACAPI/Result.hpp"
@@ -1301,9 +1302,12 @@ static void SetLayerOfRoute (const ACAPI::MEP::UniqueID& routeId, const API_Attr
             SetLayerOfElement (GSGuid2APIGuid (nodeId.GetGuid ()), layerIndex);
             auto routingNode = RoutingNode::Get (nodeId);
             if (routingNode.IsOk ()) {
+#ifdef ServerMainVers_2900
+                // RoutingNode::GetElbowIds () exists from Archicad 29; AC28 exposes transitions only.
                 for (const auto& elbowId : routingNode->GetElbowIds ()) {
                     SetLayerOfElement (GSGuid2APIGuid (elbowId.GetGuid ()), layerIndex);
                 }
+#endif
                 for (const auto& transitionId : routingNode->GetTransitionIds ()) {
                     SetLayerOfElement (GSGuid2APIGuid (transitionId.GetGuid ()), layerIndex);
                 }
