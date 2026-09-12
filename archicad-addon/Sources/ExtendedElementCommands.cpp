@@ -2435,7 +2435,7 @@ bool BuildCuboidMorphMemo (double sizeX, double sizeY, double sizeZ, API_Attribu
     (void) buildingMaterial;
     API_OverriddenAttribute material = {};
     if (surface != APIInvalidAttributeIndex) {
-        material = surface;
+        SetOverriddenAttribute (material, surface);
     }
     // 閉じたソリッドにするには、各エッジが隣接2面で互いに逆向きに走る必要がある。
     // 底面のみ逆順(0→3→2→1)にして側面(+方向)と整合させる。

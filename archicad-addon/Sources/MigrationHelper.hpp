@@ -75,6 +75,8 @@
 #define ACAPI_AddOnAddOnCommunication_Call ACAPI_Command_Call
 
 #define ACAPI_GraphicalOverride_GetVisualOverriddenImage ACAPI_Element_GetVisualOverriddenImage
+#define ACAPI_Drawing_GetDrawingScale(par1) ACAPI_Database (APIDb_GetDrawingScaleID, par1)
+#define ACAPI_DrawingPrimitive_ShapePrims ACAPI_Element_ShapePrims
 #define ACAPI_Element_InstallElementObserver ACAPI_Notify_InstallElementObserver
 #define ACAPI_Element_CatchNewElement ACAPI_Notify_CatchNewElement
 #define ACAPI_Notification_GetParentElement ACAPI_Notify_GetParentElement
@@ -572,6 +574,18 @@ inline GSErrCode TAPIR_Element_SetPropertiesOfDefaultElem (const API_Elem_Head& 
     return ACAPI_Element_SetPropertiesOfDefaultElem (elemHead.type, properties);
 #else
     return ACAPI_Element_SetPropertiesOfDefaultElem (elemHead.typeID, elemHead.variationID, properties);
+#endif
+}
+
+// API_OverriddenAttribute accepts an API_AttributeIndex directly since AC27;
+// before that it is a plain struct { attributeIndex, overridden }.
+inline void SetOverriddenAttribute (API_OverriddenAttribute& target, const API_AttributeIndex& index)
+{
+#ifdef ServerMainVers_2700
+    target = index;
+#else
+    target.attributeIndex = index;
+    target.overridden = true;
 #endif
 }
 

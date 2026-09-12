@@ -2602,9 +2602,9 @@ GS::Optional<GS::ObjectState> CreateMeshesCommand::SetTypeSpecificParameters (AP
             return CreateErrorResponse (APIERR_BADPARS, "Invalid mesh building material.");
         }
         element.mesh.buildingMaterial = attribute.header.index;
-        element.mesh.topMat = attribute.buildingMaterial.cutMaterial;
-        element.mesh.sideMat = attribute.buildingMaterial.cutMaterial;
-        element.mesh.botMat = attribute.buildingMaterial.cutMaterial;
+        SetOverriddenAttribute (element.mesh.topMat, attribute.buildingMaterial.cutMaterial);
+        SetOverriddenAttribute (element.mesh.sideMat, attribute.buildingMaterial.cutMaterial);
+        SetOverriddenAttribute (element.mesh.botMat, attribute.buildingMaterial.cutMaterial);
         element.mesh.materialsChained = false;
     }
 

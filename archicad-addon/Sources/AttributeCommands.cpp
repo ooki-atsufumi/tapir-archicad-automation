@@ -5253,6 +5253,15 @@ GS::ObjectState GetPensCommand::Execute (const GS::ObjectState& /*parameters*/, 
     GS::ObjectState response;
     const auto& pens = response.AddList<GS::ObjectState> ("pens");
 
+    auto addPen = [&] (Int32 index, const API_RGBColor& rgb) {
+        GS::ObjectState penOS;
+        penOS.Add ("index", index);
+        penOS.Add ("red", rgb.f_red);
+        penOS.Add ("green", rgb.f_green);
+        penOS.Add ("blue", rgb.f_blue);
+        pens (penOS);
+    };
+#ifdef ServerMainVers_2700
     UInt32 count = 0;
     if (ACAPI_Attribute_GetPenNum (count) != NoError) {
         return CreateErrorResponse (APIERR_GENERAL, "Failed to get the number of pens.");
@@ -5263,13 +5272,24 @@ GS::ObjectState GetPensCommand::Execute (const GS::ObjectState& /*parameters*/, 
         if (ACAPI_Attribute_GetPen (pen) != NoError) {
             continue;
         }
-        GS::ObjectState penOS;
-        penOS.Add ("index", static_cast<Int32> (pen.index));
-        penOS.Add ("red", pen.rgb.f_red);
-        penOS.Add ("green", pen.rgb.f_green);
-        penOS.Add ("blue", pen.rgb.f_blue);
-        pens (penOS);
+        addPen (static_cast<Int32> (pen.index), pen.rgb);
     }
+#else
+    // Archicad 25/26: pens are ordinary attributes (API_PenID); API_Pen does not exist yet.
+    API_AttributeIndex count = 0;
+    if (ACAPI_Attribute_GetNum (API_PenID, &count) != NoError) {
+        return CreateErrorResponse (APIERR_GENERAL, "Failed to get the number of pens.");
+    }
+    for (API_AttributeIndex i = 1; i <= count; ++i) {
+        API_Attribute attr = {};
+        attr.header.typeID = API_PenID;
+        attr.header.index = i;
+        if (ACAPI_Attribute_Get (&attr) != NoError) {
+            continue;
+        }
+        addPen (static_cast<Int32> (i), attr.pen.rgb);
+    }
+#endif
     return response;
 }
 
