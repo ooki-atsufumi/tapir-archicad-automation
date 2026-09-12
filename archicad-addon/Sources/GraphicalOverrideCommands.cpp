@@ -90,6 +90,7 @@ GS::Optional<GS::UniString> CreateGraphicalOverrideRuleCommand::GetRawResponseSc
 
 GS::ObjectState CreateGraphicalOverrideRuleCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
 {
+#ifdef ServerMainVers_2700
     GS::UniString name;
     parameters.Get ("name", name);
     GS::UniString ruleGroupName = "Tapir";
@@ -142,6 +143,10 @@ GS::ObjectState CreateGraphicalOverrideRuleCommand::Execute (const GS::ObjectSta
     GS::ObjectState response;
     response.Add ("ruleId", CreateGuidObjectState (rule.guid));
     return response;
+#else
+    UNUSED_PARAMETER (parameters);
+    return CreateErrorResponse (APIERR_NOTSUPPORTED, "This command requires Archicad 27 or newer (graphical override rule groups).");
+#endif
 }
 
 GetGraphicalOverrideRulesCommand::GetGraphicalOverrideRulesCommand () :
@@ -180,6 +185,7 @@ GS::Optional<GS::UniString> GetGraphicalOverrideRulesCommand::GetRawResponseSche
 
 GS::ObjectState GetGraphicalOverrideRulesCommand::Execute (const GS::ObjectState& /*parameters*/, GS::ProcessControl& /*processControl*/) const
 {
+#ifdef ServerMainVers_2700
     GS::ObjectState response;
     const auto& rules = response.AddList<GS::ObjectState> ("rules");
 
@@ -200,6 +206,9 @@ GS::ObjectState GetGraphicalOverrideRulesCommand::Execute (const GS::ObjectState
         rules (ruleOS);
     }
     return response;
+#else
+    return CreateErrorResponse (APIERR_NOTSUPPORTED, "This command requires Archicad 27 or newer (graphical override rule groups).");
+#endif
 }
 
 CreateGraphicalOverrideCombinationCommand::CreateGraphicalOverrideCombinationCommand () :
@@ -246,6 +255,7 @@ GS::Optional<GS::UniString> CreateGraphicalOverrideCombinationCommand::GetRawRes
 
 GS::ObjectState CreateGraphicalOverrideCombinationCommand::Execute (const GS::ObjectState& parameters, GS::ProcessControl& /*processControl*/) const
 {
+#ifdef ServerMainVers_2700
     GS::UniString name;
     parameters.Get ("name", name);
     GS::Array<GS::UniString> ruleNames;
@@ -290,4 +300,8 @@ GS::ObjectState CreateGraphicalOverrideCombinationCommand::Execute (const GS::Ob
     GS::ObjectState response;
     response.Add ("combinationGuid", APIGuidToString (combination.guid));
     return response;
+#else
+    UNUSED_PARAMETER (parameters);
+    return CreateErrorResponse (APIERR_NOTSUPPORTED, "This command requires Archicad 27 or newer (graphical override rule groups).");
+#endif
 }

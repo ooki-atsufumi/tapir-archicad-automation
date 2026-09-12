@@ -20,6 +20,9 @@ constexpr const char* CommandNamespace = "TapirCommand";
 // command registry and crashes the process on the FIRST ExecuteAddOnCommand) was found.
 void TapirBootLog (const char* fmt, ...)
 {
+#ifdef _WIN32
+    // Windows only: fopen_s / %TEMP% are Windows CRT conventions. The diagnostic log
+    // exists to debug the Windows deployment, so other platforms compile it out.
     // getenv on purpose: it returns a borrowed pointer with nothing to free. The previous
     // _dupenv_s + free() pair crashed Archicad at add-on load: _dupenv_s allocates inside
     // ucrtbase.dll, while free() in this module is patched to Archicad's tbbmalloc, and
@@ -48,6 +51,9 @@ void TapirBootLog (const char* fmt, ...)
     va_end (args);
     fprintf (f, "\r\n");
     fclose (f);
+#else
+    (void) fmt;
+#endif
 }
 
 CommandBase::CommandBase (CommonSchema commonSchema) :
