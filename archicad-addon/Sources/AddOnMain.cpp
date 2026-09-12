@@ -42,6 +42,7 @@
 #include "IFCCommands.hpp"
 #include "SolidElementOperationCommands.hpp"
 #include "MEPCommands.hpp"
+#include "JwwExportCommands.hpp"
 #include "KeynoteCommands.hpp"
 #include "GraphicalOverrideCommands.hpp"
 
@@ -1268,6 +1269,15 @@ GSErrCode Initialize (void)
             "Sets the layer of the given elements via classic API (works for MEP sub-elements)."
         );
         AddCommandGroup (mepCommands);
+    }
+
+    { // JWW Export Commands
+        CommandGroup jwwCommands ("JWW Export Commands");
+        err |= RegisterCommand<ExportJwwJsonCommand> (
+            jwwCommands, "1.5.0",
+            "Exports the current floor plan view (or the master layout) as 2D primitives with attribute tables into a JSON intermediate file for JWW (Jw_cad) conversion."
+        );
+        AddCommandGroup (jwwCommands);
     }
 
     { // Solid Element Operation Commands
