@@ -6,11 +6,9 @@
 #if defined (WINDOWS)
 #include "Win32Interface.hpp"
 #else
-#include <spawn.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-extern char** environ;
 #endif
 
 namespace {
@@ -80,7 +78,14 @@ LaunchResult LaunchDetached (const GS::UniString& executable,
         commandLine += L" ";
         commandLine += QuoteArgument (ToWide (arg));
     }
-    result.commandLine = GS::UniString (reinterpret_cast<const GS::UniChar*> (commandLine.c_str ()));
+    {
+        const int utf8Len = WideCharToMultiByte (CP_UTF8, 0, commandLine.c_str (), -1, nullptr, 0, nullptr, nullptr);
+        std::string utf8 (static_cast<size_t> (utf8Len > 0 ? utf8Len : 1), '\0');
+        if (utf8Len > 0) {
+            WideCharToMultiByte (CP_UTF8, 0, commandLine.c_str (), -1, &utf8[0], utf8Len, nullptr, nullptr);
+        }
+        result.commandLine = GS::UniString (utf8.c_str (), CC_UTF8);
+    }
 
     std::wstring workDir = ToWide (workingDirectory);
     std::vector<wchar_t> mutableCommandLine (commandLine.begin (), commandLine.end ());
@@ -122,18 +127,19 @@ LaunchResult LaunchDetached (const GS::UniString& executable,
     }
     result.commandLine = joined;
 
-    posix_spawn_file_actions_t actions;
-    posix_spawn_file_actions_init (&actions);
     const std::string workDir = ToUtf8 (workingDirectory);
-    if (!workDir.empty ()) {
-        posix_spawn_file_actions_addchdir_np (&actions, workDir.c_str ());
-    }
-    pid_t pid = 0;
-    const int rc = posix_spawnp (&pid, argv[0], &actions, nullptr, argv.data (), environ);
-    posix_spawn_file_actions_destroy (&actions);
-    if (rc != 0) {
-        result.errorMessage = GS::UniString::Printf ("posix_spawnp failed: %s", strerror (rc));
+    const pid_t pid = fork ();
+    if (pid < 0) {
+        result.errorMessage = GS::UniString::Printf ("fork failed: %s", strerror (errno));
         return result;
+    }
+    if (pid == 0) {
+        // child: change directory, replace the image; never returns on success
+        if (!workDir.empty () && chdir (workDir.c_str ()) != 0) {
+            _exit (126);
+        }
+        execvp (argv[0], argv.data ());
+        _exit (127);
     }
     result.processId = static_cast<Int64> (pid);
     result.success = true;
