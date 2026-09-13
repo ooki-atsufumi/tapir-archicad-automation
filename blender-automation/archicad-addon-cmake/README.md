@@ -70,6 +70,6 @@ blender_bridge.example.*    .pln の隣に置く起動スクリプトの例
 
 - **MDID**(`RFIX/AddOnFix.grc`)はプレースホルダです。[archicadapi.graphisoft.com](https://archicadapi.graphisoft.com)
   で無料の開発者 ID を取得して差し替えてください(他の Add-On と重複すると読み込まれません)。
-- このコードは Tapir の実装(IFCFileOperation、CommandBase、MigrationHelper)から API の使い方を写して
-  書いていますが、**この作業環境ではコンパイルしていません**(DevKit は Windows/macOS 専用)。
-  初回ビルドのエラーは CI ログまたはローカルのログを Claude Code に渡してください。
+- GitHub Actions で Windows(AC27/28/29)と macOS(AC29)のビルドが通っています。AC25/26 は
+  MigrationHelper.hpp で対応していますが CI では未ビルドです。Archicad 実機でのメニュー・コマンド動作は未確認なので、
+  問題があればアドオンマネージャーのログや JSON レスポンスを Claude Code に渡してください。

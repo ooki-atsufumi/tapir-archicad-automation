@@ -24,7 +24,8 @@ blender-automation/
 
 コミット:
 - `e893c01` Add Blender walkthrough-video automation pipeline
-- (このコミット) Add Blender Bridge Add-On based on archicad-addon-cmake + handover
+- `5e78d11` Add Blender Bridge Add-On based on archicad-addon-cmake + handover
+- `3219e75` Fix Blender Bridge Windows build (CI green on Windows AC27-29 / macOS AC29)
 
 ## 3. 設計の要点
 
@@ -40,13 +41,14 @@ blender-automation/
 
 - Blender 5.2 実機で未実行(作業環境に Blender 無し、docs.blender.org もアクセス不可)。
   想定される要修正点: `bpy.ops.bim.load_project` の引数名、EEVEE 属性名(`use_raytracing` 等)、Follow Path の keyframe 補間。
-- Blender Bridge Add-On は未コンパイル。API の使い方は Tapir の実装を踏襲。CI(GitHub Actions)で最初にビルドすること。
+- Blender Bridge Add-On は GitHub Actions で Windows AC27/28/29・macOS AC29 のビルドが通っています(コミット 3219e75)。
+  実機での動作(メニュー、IFC 書き出し、JSON コマンド)はまだ未確認です。
 - `RFIX/AddOnFix.grc` の MDID はプレースホルダ。自分の開発者 ID に差し替える。
 - 参照 YouTube 動画(NpkjkMvUghg)は環境の制限で内容未確認。
 
 ## 5. 次にやること(優先順)
 
-1. Blender Bridge を CI または手元でビルドし、コンパイルエラーを修正する。
+1. Blender Bridge の .apx / .bundle を CI の成果物または `build.bat 29` で作り、Archicad に読み込んで 3 コマンドとメニューを実機確認する。
 2. Blender 5.2 + Bonsai で `run_pipeline.py --still 1` を実行し、`scripts/` の API 差分を直す。
 3. 自宅モデルの waypoints を JSON に書き、preview 動画を出す。
 4. 写真 → Hunyuan3D/TripoSR → Mixamo で FBX を作り `avatar.enabled=true` で三人称ショットを追加。
