@@ -1,0 +1,22 @@
+﻿#include "ResourceIds.hpp"
+
+'STR#' ID_ADDON_INFO "Add-on Name and Description" {
+/* [  1] */		"Blender Bridge"
+/* [  2] */		"Exports the model to IFC and launches the Blender walkthrough-video pipeline (JSON commands in the BlenderBridge namespace)."
+}
+
+'STR#' ID_ADDON_MENU "Strings for the Menu" {
+/* [   ] */		"Blender Bridge"
+/* [  1] */		"Export IFC for Blender (next to project)^E3^ES^EE^EI^ED^EL^EW^ET^EM"
+/* [  2] */		"Run Blender pipeline script (blender_bridge.bat / .sh)...^E3^ES^EE^EI^ED^EL^EW^ET^EM"
+/* [  3] */		"About Blender Bridge...^E3^ES^EE^EI^ED^EL^EW^ET^EM"
+}
+
+'STR#' ID_ADDON_STRINGS "Messages" {
+/* [  1] */		"IFC exported for Blender."
+/* [  2] */		"IFC export failed."
+/* [  3] */		"Save the project first: the IFC is written next to the .pln file."
+/* [  4] */		"Blender pipeline started in a separate window."
+/* [  5] */		"blender_bridge.bat (Windows) or blender_bridge.sh (macOS) was not found next to the project file."
+/* [  6] */		"Blender Bridge %s\nArchicad -> IFC -> Blender walkthrough video.\nJSON commands: BlenderBridge.GetProjectPath / ExportIFC / RunBlenderPipeline"
+}

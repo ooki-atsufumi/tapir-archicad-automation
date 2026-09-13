@@ -1,0 +1,12 @@
+#include "ResourceIds.hpp"
+
+/* Register your own developer/local id pair (free) at https://archicadapi.graphisoft.com
+   and replace these two numbers. They must differ from every other installed Add-On. */
+'MDID' 32500 "Add-On Identifier" {
+	1
+	2077
+}
+
+'GICN' 10001 "AddOnIcon" {
+	"AddOnIcon"
+}

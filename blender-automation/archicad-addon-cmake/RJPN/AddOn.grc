@@ -1,0 +1,22 @@
+﻿#include "ResourceIds.hpp"
+
+'STR#' ID_ADDON_INFO "Add-on Name and Description" {
+/* [  1] */		"Blender Bridge"
+/* [  2] */		"モデルを IFC に書き出し、Blender ウォークスルー動画パイプラインを起動します(JSON コマンド名前空間: BlenderBridge)。"
+}
+
+'STR#' ID_ADDON_MENU "Strings for the Menu" {
+/* [   ] */		"Blender Bridge"
+/* [  1] */		"Blender 用に IFC を書き出す(プロジェクトと同じフォルダ)^E3^ES^EE^EI^ED^EL^EW^ET^EM"
+/* [  2] */		"Blender パイプラインを実行(blender_bridge.bat / .sh)...^E3^ES^EE^EI^ED^EL^EW^ET^EM"
+/* [  3] */		"Blender Bridge について...^E3^ES^EE^EI^ED^EL^EW^ET^EM"
+}
+
+'STR#' ID_ADDON_STRINGS "Messages" {
+/* [  1] */		"Blender 用の IFC を書き出しました。"
+/* [  2] */		"IFC の書き出しに失敗しました。"
+/* [  3] */		"先にプロジェクトを保存してください。IFC は .pln と同じフォルダに書き出します。"
+/* [  4] */		"Blender パイプラインを別ウィンドウで開始しました。"
+/* [  5] */		"プロジェクトと同じフォルダに blender_bridge.bat(Windows)または blender_bridge.sh(macOS)が見つかりません。"
+/* [  6] */		"Blender Bridge %s\nArchicad → IFC → Blender ウォークスルー動画。\nJSON コマンド: BlenderBridge.GetProjectPath / ExportIFC / RunBlenderPipeline"
+}

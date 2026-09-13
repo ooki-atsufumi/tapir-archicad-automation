@@ -1,0 +1,44 @@
+name: Blender Bridge Add-On Build Check
+
+on:
+  push:
+    paths:
+      - 'blender-automation/archicad-addon-cmake/**'
+      - '.github/workflows/blender_bridge_build_check.yml'
+  pull_request:
+    paths:
+      - 'blender-automation/archicad-addon-cmake/**'
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: blender-automation/archicad-addon-cmake
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os-type }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os-type: [ windows-2022 ]
+        ac-version: [ 27, 28, 29 ]
+        include:
+          - os-type: macos-14
+            ac-version: 29
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Setup Xcode
+        if: runner.os == 'macOS'
+        run: sudo xcode-select -s /Applications/Xcode_15.1.app
+
+      - name: Build
+        run: python Tools/BuildAddOn.py --configFile config.json --acVersion ${{ matrix.ac-version }} --buildConfig RelWithDebInfo

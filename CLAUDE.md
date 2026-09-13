@@ -42,7 +42,9 @@ archicad-addon/          C++ Archicad Add-On
 grasshopper-plugin/      C# Grasshopper plugin (.NET, produces .gha), packaged via Yak
   TapirGrasshopperPlugin/  Components/, Types/, Helps/, Resources/
 blender-automation/      Blender 5.x walkthrough-video pipeline (IFC via Tapir -> Bonsai -> bpy -> mp4);
-                         see blender-automation/README.md (Japanese)
+                         see blender-automation/README.md (Japanese). Contains archicad-addon-cmake/,
+                         a standalone "Blender Bridge" Add-On built on GRAPHISOFT's archicad-addon-cmake
+                         template (Tools/ is a git submodule; clone with --recurse-submodules)
 builtin-scripts/         Bundled automation scripts
 branding/                Logos, diagrams
 docs/                    Generated docs (archicad-addon command reference)
@@ -165,6 +167,7 @@ GitHub Actions in [.github/workflows/](.github/workflows/):
 - `archicad_addon_build_check.yml`, `grasshopper_plugin_build_check.yml` — PR build
   checks for each component.
 - `archicad_addon.yml`, `grasshopper_plugin.yml` — release/publish pipelines.
+- `blender_bridge_build_check.yml` — builds blender-automation/archicad-addon-cmake (Blender Bridge Add-On).
 
 ## Installation (end users)
 

@@ -1,0 +1,14 @@
+{
+    "addOnName": "BlenderBridge",
+    "defaultLanguage": "INT",
+    "languages": [
+        "INT",
+        "JPN"
+    ],
+    "version": "0.1.0",
+    "copyright": {
+        "name": "ooki-atsufumi",
+        "year": "%Y"
+    },
+    "description": "Exports the Archicad model to IFC and launches the Blender walkthrough-video pipeline (JSON commands + menu)."
+}

@@ -112,9 +112,15 @@ blender-automation/
     build_walkthrough.py   Blender 内オーケストレータ(JSON → シーン → レンダ)
     run_pipeline.py        外部ドライバ(IFC 書き出し → blender -b 起動)
     config.example.json    設定サンプル
+  archicad-addon-cmake/  GRAPHISOFT archicad-addon-cmake 準拠の独立 Add-On「Blender Bridge」
+                         (JSON コマンド BlenderBridge.ExportIFC / RunBlenderPipeline + メニュー)。詳細は同フォルダの README
   mcp.example.json         Claude Code 用 blender-mcp 設定
+  HANDOVER.md              他セッション・他リポジトリへの引き継ぎ資料
   run_preview.bat / run_final.bat
 ```
+
+Tapir を入れていない Archicad でも使えるように、`archicad-addon-cmake/` に IFC 書き出しとパイプライン起動だけを
+行う小さな Add-On(Blender Bridge)を同梱しています。Tapir がある場合は `archicad/export_ifc.py` だけで十分です。
 
 ## 制約・注意
 
