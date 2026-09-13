@@ -1,13 +1,17 @@
 name: Blender Bridge Add-On Build Check
 
+# Manual only: automatic runs on push were sending "Run failed" e-mails to the
+# repository owner. Start it from GitHub > Actions > "Blender Bridge Add-On Build
+# Check" > Run workflow, or restore the push/pull_request triggers below.
+#
+#  push:
+#    paths:
+#      - 'blender-automation/archicad-addon-cmake/**'
+#      - '.github/workflows/blender_bridge_build_check.yml'
+#  pull_request:
+#    paths:
+#      - 'blender-automation/archicad-addon-cmake/**'
 on:
-  push:
-    paths:
-      - 'blender-automation/archicad-addon-cmake/**'
-      - '.github/workflows/blender_bridge_build_check.yml'
-  pull_request:
-    paths:
-      - 'blender-automation/archicad-addon-cmake/**'
   workflow_dispatch:
 
 defaults:

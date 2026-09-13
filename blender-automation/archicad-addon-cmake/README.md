@@ -26,7 +26,8 @@ build.bat 29          # -> Build/ 以下に BlenderBridge.apx
 
 `Tools/BuildAddOn.py`(サブモジュール archicad-addon-cmake-tools)が DevKit を自動ダウンロードします。
 サブモジュールが空の場合は `git submodule update --init --recursive` を実行してください。
-CI: `.github/workflows/blender_bridge_build_check.yml` が Windows AC27〜29 / macOS AC29 をビルドします。
+CI: `.github/workflows/blender_bridge_build_check.yml` が Windows AC27〜29 / macOS AC29 をビルドします
+(失敗メールを避けるため **手動実行のみ**: GitHub > Actions > Blender Bridge Add-On Build Check > Run workflow)。
 
 インストールは Tapir と同じです: *オプション > アドオンマネージャー > 利用可能なアドオンリストを編集 > 追加*。
 
