@@ -1,0 +1,39 @@
+{
+  "_comment": "座標は Archicad のプロジェクト座標(m)。waypoints は歩くルートの床面の点。IFC と同じ原点。",
+  "fps": 30,
+  "model": {
+    "path": "../examples/assets/model.ifc"
+  },
+  "camera": {
+    "waypoints": [[1.0, 1.0, 0.0], [6.0, 1.2, 0.0], [8.0, 4.0, 0.0], [8.5, 9.0, 0.0]],
+    "eye_height_m": 1.6,
+    "walk_speed_m_s": 1.2,
+    "focal_length_mm": 24,
+    "look_ahead_m": 2.5,
+    "head_bob": true,
+    "depth_of_field": false,
+    "fstop": 4.0
+  },
+  "avatar": {
+    "enabled": false,
+    "path": "../examples/assets/me_walking_inplace.fbx",
+    "height_m": 1.70,
+    "ahead_of_camera_m": 2.5
+  },
+  "lighting": {
+    "hdri": null,
+    "sun": true,
+    "sun_elevation_deg": 40,
+    "sun_azimuth_deg": 150,
+    "sun_strength": 4.0,
+    "world_strength": 1.0,
+    "interior_fill": true,
+    "fill_power_w": 250,
+    "exposure": 0.0
+  },
+  "output": {
+    "preset": "preview",
+    "video": "../renders/walkthrough.mp4",
+    "overrides": {}
+  }
+}

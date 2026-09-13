@@ -41,6 +41,8 @@ archicad-addon/          C++ Archicad Add-On
   README.md
 grasshopper-plugin/      C# Grasshopper plugin (.NET, produces .gha), packaged via Yak
   TapirGrasshopperPlugin/  Components/, Types/, Helps/, Resources/
+blender-automation/      Blender 5.x walkthrough-video pipeline (IFC via Tapir -> Bonsai -> bpy -> mp4);
+                         see blender-automation/README.md (Japanese)
 builtin-scripts/         Bundled automation scripts
 branding/                Logos, diagrams
 docs/                    Generated docs (archicad-addon command reference)
