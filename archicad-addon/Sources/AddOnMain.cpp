@@ -43,6 +43,7 @@
 #include "SolidElementOperationCommands.hpp"
 #include "MEPCommands.hpp"
 #include "JwwExportCommands.hpp"
+#include "GridElementCommands.hpp"
 #include "KeynoteCommands.hpp"
 #include "GraphicalOverrideCommands.hpp"
 
@@ -576,6 +577,18 @@ GSErrCode Initialize (void)
         err |= RegisterCommand<ModifyLabelsCommand> (
             elementCommands, "1.5.9",
             "Modifies Label elements based on the given parameters."
+        );
+        err |= RegisterCommand<GetGridElementDefaultsCommand> (
+            elementCommands, "1.5.10",
+            "Gets the tool defaults of the Grid Element (gridline object, API_ObjectID + APIVarId_GridElement): library part, size and GDL parameters."
+        );
+        err |= RegisterCommand<GetGridElementsCommand> (
+            elementCommands, "1.5.10",
+            "Lists the Grid Elements (gridline objects) of the project with their position, angle, size, library part and optionally GDL parameters."
+        );
+        err |= RegisterCommand<CreateGridElementsCommand> (
+            elementCommands, "1.5.10",
+            "Creates Grid Elements (gridline objects) from begin/end coordinates, with optional story, layer and GDL parameters."
         );
         err |= RegisterCommand<GetElementPreviewImageCommand> (
             elementCommands, "1.2.7",
