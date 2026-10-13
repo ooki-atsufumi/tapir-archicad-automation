@@ -15,12 +15,13 @@
 
 namespace {
 
+// Everything in here is used only by the Archicad 26+ code paths; AC25 builds treat
+// unused functions as errors, so the whole block is version-guarded.
 #ifdef ServerMainVers_2600
 API_ElemType GridElemType ()
 {
     return API_ElemType (API_ObjectID, APIVarId_GridElement);
 }
-#endif
 
 GS::UniString VariationToString (Int32 v)
 {
@@ -198,6 +199,8 @@ bool ApplyParameter (API_AddParType** params, const GS::ObjectState& p, GS::Arra
     return false;
 }
 
+#endif
+
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -321,6 +324,7 @@ GS::ObjectState GetGridElementsCommand::Execute (const GS::ObjectState& paramete
     }
     return response;
 #else
+    (void) parameters;
     return CreateFailedExecutionResult (APIERR_NOTSUPPORTED, "Grid Element commands need Archicad 26 or later.");
 #endif
 }
