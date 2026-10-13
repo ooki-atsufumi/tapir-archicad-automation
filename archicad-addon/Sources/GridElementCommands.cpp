@@ -131,7 +131,7 @@ GS::ObjectState DescribeGridElement (const API_Element& element, API_AddParType*
 {
     GS::ObjectState os;
     os.Add ("elementId", CreateGuidObjectState (element.header.guid));
-    os.Add ("variation", VariationToString ((Int32) element.header.type.variationID));
+    os.Add ("variation", VariationToString ((Int32) GetElemVariationId (element.header)));
     os.Add ("floorIndex", (Int32) element.header.floorInd);
     os.Add ("layerIndex", GetAttributeIndex (element.header.layer));
     GS::ObjectState pos;
