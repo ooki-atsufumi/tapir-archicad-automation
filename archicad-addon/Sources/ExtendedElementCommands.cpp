@@ -4459,8 +4459,15 @@ GS::ObjectState CreateOpeningsCommand::Execute (const GS::ObjectState& parameter
             // polygon's own offset is ignored: building the corners over -height..0 instead of
             // 0..height changed nothing at all, so PlacePolygonal evidently normalizes the
             // polygon and keeps only its extents.
+            //
+            // AC30 no longer hangs the polygon below the point: there the sill already lands on
+            // the given Z, so the AC29 correction lifted every opening by its own height (measured
+            // on AC30 3001 with collision probes: z 2.0 / h 1.0 opened 3.0-4.0, z 1.0 / h 0.6
+            // opened 1.6-2.2). Apply the correction to AC29 only.
             API_Coord3D placementPoint = basePoint;
+#ifndef ServerMainVers_3000
             placementPoint.z += height;
+#endif
 
             ACAPI::UniqueID parentElemId (APIGuid2GSGuid (GetGuidFromObjectState (*data.Get ("ownerElementId"))), ACAPI_GetToken ());
             ACAPI::Result<ACAPI::UniqueID> resultId = openingDefault->PlacePolygonal (parentElemId, placementPoint, polygon);
